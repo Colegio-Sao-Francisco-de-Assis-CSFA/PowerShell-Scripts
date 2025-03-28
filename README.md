@@ -1,8 +1,4 @@
-# Scripts de Powershell criados para o CSFA
-
-Sugestões, críticas ou comentários são sempre bem-vindos!
-
-# 🧰 PowerShell Scripts
+# 🧰 Scripts de Powershell criados para o CSFA
 
 Este repositório contém diversos scripts em PowerShell utilizados para automações administrativas no ambiente escolar, gerenciamento do Google Workspace (especialmente Google Classroom) e tarefas do dia a dia.
 
