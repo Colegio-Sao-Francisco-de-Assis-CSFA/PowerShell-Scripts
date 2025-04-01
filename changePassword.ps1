@@ -1,9 +1,9 @@
-#Mudar a senha do AD dos usu·rios
+Ôªø#Mudar a senha do AD dos usu√°rios
 
-$servico = "email" #Coloque aqui se quer alterar a senha do AD ou do e-mail do usu·rio, as vari·veis possÌveis s„o "ad", "email" ou "ambos"
-$tipousuario = "func" #Aluno ou funcion·rio?
-$adusername = "cloves.neto" #Coloque aqui o usu·rio do Active Directory
-$email = "manuela.melo@aluno.colsaofrancisco.com.br" #Coloque aqui o e-mail do usu·rio
+$servico = "email" #Coloque aqui se quer alterar a senha do AD ou do e-mail do usu√°rio, as vari√°veis poss√≠veis s√£o "ad", "email" ou "ambos"
+$tipousuario = "func" #Aluno ou funcion√°rio?
+$adusername = "cloves.neto" #Coloque aqui o usu√°rio do Active Directory
+$email = "manuela.melo@aluno.colsaofrancisco.com.br" #Coloque aqui o e-mail do usu√°rio
 $password = "Mudar123" #Coloque aqui a senha para ser utilizada
 
 if ($servico -eq "ad") {
@@ -16,12 +16,12 @@ Set-ADUser `
 -Identity $adusername `-PasswordNeverExpires $true `
 -ChangePasswordAtLogon $false
 
-Write-Warning "Senha do Active Directory do usu·rio $adusername alterada para $password."
+Write-Warning "Senha do Active Directory do usu√°rio $adusername alterada para $password."
 }
 
 elseif ($servico -eq "email") {
 gam update user $email password $password changepassword on
-Write-Warning "Senha do Google do usu·rio $email alterada para $password."
+Write-Warning "Senha do Google do usu√°rio $email alterada para $password."
 }
 
 elseif ($servico -eq "ambos") {
@@ -33,8 +33,8 @@ Set-ADUser `
 -Identity $adusername `-PasswordNeverExpires $false `
 -ChangePasswordAtLogon $true
 
-Write-Warning "Senha do Active Directory do usu·rio $adusername alterada para $password."
+Write-Warning "Senha do Active Directory do usu√°rio $adusername alterada para $password."
 
 gam update user $email password $password changepassword on
-Write-Warning "Senha do usu·rio $email alterada para $password no Google."
+Write-Warning "Senha do usu√°rio $email alterada para $password no Google."
 }

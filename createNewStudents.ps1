@@ -1,4 +1,4 @@
-#Criar alunos novos a partir do arquivo CSV
+Ôªø#Criar alunos novos a partir do arquivo CSV
 
 $alunos = Import-Csv "D:\Downloads\alunosnovos.csv"
 
@@ -18,7 +18,7 @@ $alias = "$adusername@colsaofrancisco.com.br"
 
 if ([bool] (Get-ADUser -Filter { SamAccountName -eq $adusername })) {
 
-Write-Warning "A conta $adusername do(a) aluno(a) $firstname $surname - $cod j· existe." }
+Write-Warning "A conta $adusername do(a) aluno(a) $firstname $surname - $cod j√° existe." }
 
 else {
 
@@ -56,4 +56,4 @@ Write-Host "Alias $alias criado."
 }
 }
 
-Write-Warning "N„o se esqueÁa do Portal SAS e da cantina."
+Write-Warning "N√£o se esque√ßa do Portal SAS e da cantina."

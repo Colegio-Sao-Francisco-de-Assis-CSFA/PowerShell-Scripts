@@ -1,4 +1,4 @@
-#Reativar alunos e/ou funcion·rios a partir do arquivo CSV
+Ôªø#Reativar alunos e/ou funcion√°rios a partir do arquivo CSV
 
 $reativos = Import-Csv "D:\Downloads\reativos.csv"
 
@@ -21,7 +21,7 @@ Set-ADUser `
 
 Write-Warning "Conta do Active Directory $adusername do aluno $firstname $surname reativada."
 
-#muda o usu·rio para a Unidade Organizacional e adiciona ao grupo dos alunos
+#muda o usu√°rio para a Unidade Organizacional e adiciona ao grupo dos alunos
 Get-ADUser -Identity $adusername | `Move-ADObject `-TargetPath $adou
 
 Write-Warning "$adusername movido para a OU $adou"
@@ -30,7 +30,7 @@ Add-ADGroupMember -Identity ALUNOS -Members $adusername
 
 Write-Warning "$adusername adicionado ao grupo ALUNOS."
 
-#altera a senha do Active Directory do usu·rio
+#altera a senha do Active Directory do usu√°rio
 Set-ADAccountPassword `
 -Identity $adusername `
 -NewPassword (ConvertTo-SecureString "$password" -AsPlainText -Force)
@@ -39,7 +39,7 @@ Set-ADUser `
 -Identity $adusername `-PasswordNeverExpires $true `
 -ChangePasswordAtLogon $false
 
-Write-Warning "Senha do usu·rio $adusername alterada para $password"
+Write-Warning "Senha do usu√°rio $adusername alterada para $password"
 
 gam update user $email firstname "$firstname" lastname "$surname" `
 password "$password" suspended off changepassword on `externalid organization $cod `org /Alunos/$org `
@@ -53,4 +53,4 @@ Write-Warning "$email adicionado ao grupo $grupo."
 
 }
 
-Write-Warning "N„o se esqueÁa do Portal SAS e da cantina."
+Write-Warning "N√£o se esque√ßa do Portal SAS e da cantina."

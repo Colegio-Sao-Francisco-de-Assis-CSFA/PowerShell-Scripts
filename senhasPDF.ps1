@@ -1,24 +1,24 @@
-#Antes de rodar esse script, confira se os boletos e o arquivo das senhas j· foi gerado.
-#Para gerar os boletos, acesse o SIGA pela vers„o desktop, na aba Financeiro -> CobranÁa Registrada -> escolha o lote correto de boletos -> OperaÁıes ->
-#Gerar/Enviar boleto em PDF -> Apenas gerar PDF -> Formato de geraÁ„o: matrÌcula - tÌtulo
+Ôªø#Antes de rodar esse script, confira se os boletos e o arquivo das senhas j√° foi gerado.
+#Para gerar os boletos, acesse o SIGA pela vers√£o desktop, na aba Financeiro -> Cobran√ßa Registrada -> escolha o lote correto de boletos -> Opera√ß√µes ->
+#Gerar/Enviar boleto em PDF -> Apenas gerar PDF -> Formato de gera√ß√£o: matr√≠cula - t√≠tulo
 
-$caminho = "D:\Downloads\boletos dez" #caminho para a pasta do mÍs
+$caminho = "D:\Downloads\boletos dez" #caminho para a pasta do m√™s
 
 $arquivos = Import-Csv "$caminho\senhas.csv"
 
 if (Test-Path -Path "$caminho\protected") {
-Write-Warning "Pasta protected j· existe, iniciando script."
+Write-Warning "Pasta protected j√° existe, iniciando script."
 }
 else {
-Write-Warning "Pasta protected n„o existe, criando antes de iniciar o script."
+Write-Warning "Pasta protected n√£o existe, criando antes de iniciar o script."
 New-Item -ItemType Directory -Path "$caminho\protected"
 }
 
 if (Test-Path -Path "$caminho\financeiro") {
-Write-Warning "Pasta financeiro j· existe, iniciando script."
+Write-Warning "Pasta financeiro j√° existe, iniciando script."
 }
 else {
-Write-Warning "Pasta financeiro n„o existe, criando antes de iniciar o script."
+Write-Warning "Pasta financeiro n√£o existe, criando antes de iniciar o script."
 New-Item -ItemType Directory -Path "$caminho\financeiro"
 }
 
@@ -34,7 +34,7 @@ pdftk "$caminho\$cod.pdf" output "$caminho\protected\$cod.pdf" user_pw $senha
 Write-Warning "$cod.pdf protegido e copiado para a pasta protected."
 }
 else {
-Write-Warning "Arquivo $cod.pdf n„o existe."
+Write-Warning "Arquivo $cod.pdf n√£o existe."
 }
 
 }
