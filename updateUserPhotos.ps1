@@ -20,7 +20,7 @@ $gsuitepics = (Get-Item -Path (Read-Host "Digite ou cole o caminho da pasta com 
 $ext = "jpg"
 
 # Define o nome do arquivo de log com timestamp
-$logFile = Join-Path -Path $gsuitepics -ChildPath ("log_fotos_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".txt")
+$logFile = Join-Path -Path $gsuitepics -ChildPath ("_log_fotos_" + (Get-Date -Format "yyyy-MM-dd_HH-mm-ss") + ".txt")
 
 # Busca os arquivos na pasta
 $fotos = Get-ChildItem -Path $gsuitepics -Filter "*.$ext"
