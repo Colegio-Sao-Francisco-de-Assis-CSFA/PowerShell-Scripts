@@ -1,19 +1,17 @@
 <#
 .SINOPSE
-    Adicionar sinopse aqui
+    Script descontinuado.
 
 .DESCRIÇÃO
-    Adicionar descrição detalhada aqui
-
-.EXEMPLO
-    .\updateUserPhotos.ps1
+    Este script foi descontinuado. Substituído por `user/update-user-photos.ps1`.
 
 .NOTAS
     Autor: Diogo
-    Última atualização: 03/04/2025
+    Status: Deprecated
+    Última atualização: 01/04/2025
 #>
 
-﻿<#
+<#
     Script: Atualização de fotos dos usuários no Google Workspace
     Autor: Diogo
     Descrição:
@@ -41,8 +39,8 @@ $logFile = Join-Path -Path $gsuitepics -ChildPath ("log_fotos_" + (Get-Date -For
 $fotos = Get-ChildItem -Path $gsuitepics -Filter "*.$ext"
 
 if ($fotos.Count -eq 0) {
-  Write-Warning "Nenhuma imagem .$ext encontrada na pasta. Encerrando."
-  return
+    Write-Warning "Nenhuma imagem .$ext encontrada na pasta. Encerrando."
+    return
 }
 
 # Início do log
@@ -51,19 +49,19 @@ Add-Content -Path $logFile -Value "Data: $(Get-Date)`n"
 
 # Loop pelas fotos
 foreach ($foto in $fotos) {
-  $email = $foto.BaseName
-  $caminhoFoto = $foto.FullName
+    $email = $foto.BaseName
+    $caminhoFoto = $foto.FullName
 
-  # Executa o GAM e captura a saída
-  $saida = & gam user $email update photo "$caminhoFoto" 2>&1
+    # Executa o GAM e captura a saída
+    $saida = & gam user $email update photo "$caminhoFoto" 2>&1
 
-  # Adiciona a saída ao log
-  Add-Content -Path $logFile -Value "[$email] - $(Get-Date -Format "HH:mm:ss")"
-  Add-Content -Path $logFile -Value $saida
-  Add-Content -Path $logFile -Value "`n"
+    # Adiciona a saída ao log
+    Add-Content -Path $logFile -Value "[$email] - $(Get-Date -Format "HH:mm:ss")"
+    Add-Content -Path $logFile -Value $saida
+    Add-Content -Path $logFile -Value "`n"
 
-  # Saída limpa no console
-  Write-Host "✅ Foto atualizada: $email"
+    # Saída limpa no console
+    Write-Host "✅ Foto atualizada: $email"
 }
 
 Write-Host "`n📝 Log salvo em: $logFile"

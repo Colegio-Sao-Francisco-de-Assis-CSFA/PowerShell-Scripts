@@ -1,19 +1,17 @@
 <#
 .SINOPSE
-    Adicionar sinopse aqui
+    Script descontinuado.
 
 .DESCRIÇÃO
-    Adicionar descrição detalhada aqui
-
-.EXEMPLO
-    .\videos_Natalia.ps1
+    Este script foi descontinuado. Script específico de projeto, não mais utilizado.
 
 .NOTAS
     Autor: Diogo
-    Última atualização: 03/04/2025
+    Status: Deprecated
+    Última atualização: 01/04/2025
 #>
 
-﻿# Set the folder containing the videos
+# Set the folder containing the videos
 $inputFolder = "D:\Downloads\videos natalia"
 $outputFolder = "D:\Downloads\videos natalia\classapp"
 

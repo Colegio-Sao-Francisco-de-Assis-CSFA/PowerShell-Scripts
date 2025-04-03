@@ -1,19 +1,17 @@
 <#
 .SINOPSE
-    Adicionar sinopse aqui
+    Script descontinuado.
 
 .DESCRIÇÃO
-    Adicionar descrição detalhada aqui
-
-.EXEMPLO
-    .\updateFuncPhotos.ps1
+    Este script foi descontinuado. Substituído por `user/update-user-photos.ps1`.
 
 .NOTAS
     Autor: Diogo
-    Última atualização: 03/04/2025
+    Status: Deprecated
+    Última atualização: 01/04/2025
 #>
 
-﻿<# 
+<# 
     Script: Atualização de fotos dos funcionários no Google Workspace
     Autor: Diogo
     Descrição: 
@@ -41,20 +39,20 @@ $ext = "jpg"
 
 foreach ($func in $funcs) {
 
-  $email = $func.primaryEmail
+    $email = $func.primaryEmail
 
-  if (Test-Path -Path "$gsuitepics\$email.$ext" -PathType Leaf) {
+    if (Test-Path -Path "$gsuitepics\$email.$ext" -PathType Leaf) {
 
-    gam user $email update photo $gsuitepics\$email.$ext
+        gam user $email update photo $gsuitepics\$email.$ext
 
-    Write-Host "Foto do Google Workspace do usuário $email alterada."
+        Write-Host "Foto do Google Workspace do usuário $email alterada."
 
-  }
-  else {
+    }
+    else {
 
-    Write-Warning "Arquivo $gsuitepics\$email.$ext não existe."
+        Write-Warning "Arquivo $gsuitepics\$email.$ext não existe."
 
-  }
+    }
 }
 
 Write-Warning "Script finalizado."
