@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SINOPSE
     Adicionar sinopse aqui
 
