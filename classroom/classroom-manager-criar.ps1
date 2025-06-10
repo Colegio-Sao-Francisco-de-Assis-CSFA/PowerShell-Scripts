@@ -1,32 +1,35 @@
-﻿<#
-.SINOPSE
-    Adicionar sinopse aqui
+﻿﻿<#
+  .SINOPSE
+    Cria turmas no Google Classroom com os parâmetros definidos em um CSV.
 
-.DESCRIÇÃO
-    Adicionar descrição detalhada aqui
+  .DESCRIÇÃO
+    Este script importa um arquivo CSV contendo os dados das turmas (nome, alias, seção, sala e professor)
+    e cria as turmas utilizando o GAM, definindo o status como ativo.
 
-.EXEMPLO
-    .\ClassroomManager_criar.ps1
+  .EXEMPLO
+    .\classroom-manager-criar.ps1
 
-.NOTAS
+  .NOTAS
     Autor: Diogo
-    Última atualização: 03/04/2025
+    Última atualização: 08/04/2025
 #>
 
-﻿# Criar as turmas do Google Classroom com os parâmetros corretos
+# Importa as turmas a partir de um arquivo CSV
 $turmas = Import-Csv "D:\Downloads\classroom_manager.csv"
 
+# Itera sobre cada entrada e cria o curso
 foreach ($turma in $turmas) {
 
-$nome = $turma.name
-$alias = $turma.Aliases
-$section = $turma.section
-$room = $turma.room
-$teacher = $turma.ownerEmail
+  $nome    = $turma.name
+  $alias   = $turma.Aliases
+  $section = $turma.section
+  $room    = $turma.room
+  $teacher = $turma.ownerEmail
 
-gam create course name "$nome" alias "$alias" section "$section" room "$room" status ACTIVE teacher diogo@colsaofrancisco.com.br
-Write-Host "Curso $nome com o alias $alias criado"
+  # Cria o curso com os dados fornecidos
+  gam create course name "$nome" alias "$alias" section "$section" room "$room" status ACTIVE teacher diogo@colsaofrancisco.com.br
 
+  Write-Host "Curso $nome com o alias $alias criado."
 }
 
 Write-Warning "Script finalizado."

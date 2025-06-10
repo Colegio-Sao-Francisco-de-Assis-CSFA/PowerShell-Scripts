@@ -1,40 +1,49 @@
-﻿<#
+﻿﻿﻿﻿<#
 .SINOPSE
-    Adicionar sinopse aqui
+Arquiva turmas do Google Classroom e atualiza seus nomes com o ano finalizado.
 
 .DESCRIÇÃO
-    Adicionar descrição detalhada aqui
+Este script lê um arquivo CSV com as turmas e realiza três ações principais:
+- Renomeia a turma incluindo o ano de finalização no nome
+- Arquiva a turma
+- Remove o alias associado
+Também sincroniza o grupo de professores responsáveis com o grupo 'owners'.
 
 .EXEMPLO
-    .\ClassroomManager_arquivar.ps1
+.\classroom-manager-arquivar.ps1
 
 .NOTAS
-    Autor: Diogo
-    Última atualização: 03/04/2025
+Autor: Diogo
+Última atualização: 08/04/2025
 #>
 
-﻿# Atualizar os nomes e arquivar as turmas do Google Classroom
+# Importa os dados das turmas a partir de um CSV
 $turmas = Import-Csv "D:\Downloads\classroom_manager.csv"
+
+# Solicita o ano de finalização das turmas
 $ano = Read-Host "Que ano foi finalizado?"
 
+# Itera sobre cada turma
 foreach ($turma in $turmas) {
 
-$id = $turma.id
-$nome = $turma.name
-$alias = $turma.Aliases
-$novonome = "$ano | $nome"
+  $id = $turma.id
+  $nome = $turma.name
+  $alias = $turma.Aliases
+  $novonome = "$ano | $nome"
 
-gam update course $id name $novonome `
-status ARCHIVED
+  # Atualiza o nome e arquiva a turma
+  gam update course $id name $novonome `
+    status ARCHIVED
 
-Write-Warning "Turma $nome arquivada e nome alterado para $novonome."
+  Write-Warning "Turma $nome arquivada e nome alterado para $novonome."
 
-gam course $id delete alias $alias
+  # Remove o alias antigo
+  gam course $id delete alias $alias
 
-Write-Warning "alias $alias deletado."
+  Write-Warning "Alias $alias deletado."
 
-gam course $id sync teachers group "owners@colsaofrancisco.com.br"
-
+  # Sincroniza os professores responsáveis com o grupo 'owners'
+  gam course $id sync teachers group "owners@colsaofrancisco.com.br"
 }
 
 Write-Warning "Script finalizado."

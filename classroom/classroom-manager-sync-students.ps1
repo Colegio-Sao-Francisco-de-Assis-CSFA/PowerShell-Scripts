@@ -13,23 +13,15 @@
     Última atualização: 03/04/2025
 #>
 
-﻿# Criar as turmas do Google Classroom com os parâmetros corretos
+# Sincronizar as turmas do Google Classroom com os grupos de alunos
 $turmas = Import-Csv "D:\Downloads\classroom_manager.csv"
 
 foreach ($turma in $turmas) {
 
-$nome = $turma.name
-$alias = $turma.Aliases
-$section = $turma.section
-$room = $turma.room
-$id = $turma.id
-$teacher = $turma.ownerEmail
-$teacherGroup = $turma.teachergroup
-$studentGroup = $turma.studentgroup
+    $id = $turma.id
+    $studentGroup = $turma.studentgroup
 
-gam course $id sync students group $studentGroup
-
-#Write-Warning "Professor $teacher adicionado ao curso $nome."
+    gam course $id sync students group $studentGroup
 
 }
 

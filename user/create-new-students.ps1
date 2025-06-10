@@ -13,7 +13,7 @@
     Última atualização: 03/04/2025
 #>
 
-﻿#Criar alunos novos a partir do arquivo CSV
+#Criar alunos novos a partir do arquivo CSV
 
 $alunos = Import-Csv "D:\Downloads\alunosnovos.csv"
 

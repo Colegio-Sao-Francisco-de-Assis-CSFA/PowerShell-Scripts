@@ -13,7 +13,7 @@
     Última atualização: 03/04/2025
 #>
 
-﻿#Suspender alunos e/ou funcionários a partir do arquivo CSV
+# Suspender alunos e/ou funcionários a partir do arquivo CSV
 
 $suspensos = Import-Csv "D:\Downloads\suspensos.csv"
 

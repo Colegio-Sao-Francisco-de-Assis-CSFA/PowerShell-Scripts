@@ -1,35 +1,36 @@
 ﻿<#
-.SINOPSE
-    Adicionar sinopse aqui
+  .SINOPSE
+    Adiciona o professor responsável a cada turma no Google Classroom.
 
-.DESCRIÇÃO
-    Adicionar descrição detalhada aqui
+  .DESCRIÇÃO
+    Este script lê um arquivo CSV contendo as informações das turmas e adiciona o professor responsável
+    utilizando o GAM (Google Apps Manager). Para cada turma, o script adiciona e atualiza o professor conforme o ID.
 
-.EXEMPLO
-    .\ClassroomManager_addTeacher.ps1
+  .EXEMPLO
+    .\classroom-manager-add-teacher.ps1
 
-.NOTAS
+  .NOTAS
     Autor: Diogo
-    Última atualização: 03/04/2025
+    Última atualização: 08/04/2025
 #>
 
-﻿# Criar as turmas do Google Classroom com os parâmetros corretos
+# Importa as turmas a partir de um arquivo CSV localizado na pasta Downloads
 $turmas = Import-Csv "D:\Downloads\classroom-manager.csv"
 
+# Itera sobre cada turma no CSV
 foreach ($turma in $turmas) {
 
-$nome = $turma.name
-$alias = $turma.Aliases
-$section = $turma.section
-$room = $turma.room
-$id = $turma.id
-$teacher = $turma.ownerEmail
+  $nome = $turma.name
+  $id = $turma.id
+  $teacher = $turma.ownerEmail
 
-gam course $id add teacher $teacher
-gam update course $id teacher $teacher
+  # Adiciona o professor ao curso
+  gam course $id add teacher $teacher
 
-Write-Warning "Professor $teacher adicionado ao curso $nome."
+  # Garante que o professor seja definido como principal
+  gam update course $id teacher $teacher
 
+  Write-Warning "Professor $teacher adicionado ao curso $nome."
 }
 
 Write-Warning "Script finalizado."

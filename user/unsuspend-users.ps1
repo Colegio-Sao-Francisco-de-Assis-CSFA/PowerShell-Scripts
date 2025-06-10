@@ -1,21 +1,4 @@
-﻿﻿<#
-.SINOPSE
-    Adicionar sinopse aqui
-
-.DESCRIÇÃO
-    Adicionar descrição detalhada aqui
-
-.EXEMPLO
-    .\unsuspendUsers_2.0.ps1
-
-.NOTAS
-    Autor: Diogo
-    Última atualização: 03/04/2025
-#>
-
-## Reativar alunos e/ou funcionários a partir do arquivo CSV
-
-$reativos = Import-Csv "D:\Downloads\reativos.csv"
+﻿﻿$reativos = Import-Csv "D:\Downloads\reativos.csv"
 
 foreach ($reativo in $reativos) {
 

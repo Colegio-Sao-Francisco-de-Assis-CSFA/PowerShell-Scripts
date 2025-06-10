@@ -1,35 +1,55 @@
-﻿<#
-.SINOPSE
-    Adicionar sinopse aqui
+﻿﻿<#
+  .SINOPSE
+    Adiciona os administradores responsáveis em todas as turmas do Google Classroom.
 
-.DESCRIÇÃO
-    Adicionar descrição detalhada aqui
+  .DESCRIÇÃO
+    Este script lê um arquivo CSV com as turmas extras e adiciona os administradores como co-professores
+    utilizando comandos GAM. Ideal para turmas supervisionadas por coordenadores, equipe de TI, etc.
 
-.EXEMPLO
-    .\ClassroomManager_ADMs.ps1
+  .EXEMPLO
+    .\classroom-manager-adms.ps1
 
-.NOTAS
+  .NOTAS
     Autor: Diogo
-    Última atualização: 03/04/2025
+    Última atualização: 22/04/2025
 #>
 
-﻿# Criar as turmas do Google Classroom com os parâmetros corretos
-$turmas = Import-Csv "D:\Downloads\turmas-extras.csv"
+# Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Clear-Host
 
+# Carrega as variáveis do .env
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$envFile = Join-Path $scriptDir ".env"
+
+Get-Content $envFile | ForEach-Object {
+  if ($_ -match "^\s*([^#].*?)\s*=\s*(.*)\s*$") {
+    [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2])
+  }
+}
+
+# Obtém a lista de admins a partir da variável de ambiente
+$admins = $env:ADMINS -split "," | ForEach-Object { $_.Trim() }
+
+# Verifica se há administradores definidos
+if (-not $admins -or $admins.Count -eq 0 -or ($admins -eq "")) {
+  Write-Warning "❌ Nenhum administrador encontrado na variável ADMINS. Verifique o arquivo .env."
+  exit
+}
+
+# Importa a lista de turmas extras a partir de um arquivo CSV
+$turmas = Import-Csv "D:\Downloads\classroom_manager.csv"
+
+# Itera sobre cada turma no CSV e adiciona os administradores
 foreach ($turma in $turmas) {
 
-$nome = $turma.name
-$alias = $turma.Aliases
-$section = $turma.section
-$room = $turma.room
-$id = $turma.id
-$teacher = $turma.ownerEmail
-
-gam course $id add teacher irene@colsaofrancisco.com.br
-gam course $id add teacher phellipe@colsaofrancisco.com.br
-gam course $id add teacher andre.santos@colsaofrancisco.com.br
-gam course $id add teacher cloves.neto@colsaofrancisco.com.br
-
+  $id = $turma.id
+  # Adiciona os administradores/coordenadores como professores adicionais  
+  foreach ($admin in $admins) {
+    # gam course $id add teacher $admin
+    Write-Host "$admin"
+  }
 }
 
 Write-Warning "Script finalizado."

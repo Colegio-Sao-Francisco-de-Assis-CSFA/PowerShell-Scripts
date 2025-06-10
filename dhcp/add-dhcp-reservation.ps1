@@ -13,17 +13,16 @@
     Última atualização: 03/04/2025
 #>
 
-﻿$Leases = Import-csv "D:\Downloads\dhcp.csv"
+$Leases = Import-Csv "D:\Downloads\dhcp.csv"
 
-foreach ($Lease in $Leases)
-{
+foreach ($Lease in $Leases) {
 
-$ip = $Lease.IPAddress
-$Nome = $Lease.HostName
-$mac = $Lease.ClientId
-$desc = $Lease.Description
-$scope = $Lease.ScopeId
+    $ip = $Lease.IPAddress
+    $Nome = $Lease.HostName
+    $mac = $Lease.ClientId
+    $desc = $Lease.Description
+    $scope = $Lease.ScopeId
 
-Add-DhcpServerv4Reservation -ComputerName "ametista.csfa.com.br" -ScopeId $scope -IPAddress $ip -Name "$Nome" -ClientId "$mac" -Description "$desc"
-Write-Warning "Reserva $Nome | $desc | $ip | $mac adicionada ao DHCP."
+    Add-DhcpServerv4Reservation -ComputerName "ametista.csfa.com.br" -ScopeId $scope -IPAddress $ip -Name "$Nome" -ClientId "$mac" -Description "$desc"
+    Write-Warning "Reserva $Nome | $desc | $ip | $mac adicionada ao DHCP."
 }
