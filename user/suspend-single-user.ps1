@@ -19,7 +19,7 @@ do {
   Add-Type -AssemblyName System.Web
 
   # Solicita o nome do usuário do Active Directory
-  $adusername = Read-Host "Digite o nome de usuário do Active Directory (SamAccountName)"
+  $adusername = Read-Host "Digite o nome de usuário do Active Directory ou e-mail (SamAccountName)"
 
   # Checa se o usuário existe no AD
   $adUser = Get-ADUser -Filter { SamAccountName -eq $adusername } -Properties EmailAddress
