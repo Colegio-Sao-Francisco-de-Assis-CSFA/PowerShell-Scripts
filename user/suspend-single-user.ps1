@@ -14,6 +14,11 @@
     Última atualização: 03/04/2025
 #>
 
+# Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Clear-Host
+
 do {
   # Importar System.Web assembly
   Add-Type -AssemblyName System.Web
