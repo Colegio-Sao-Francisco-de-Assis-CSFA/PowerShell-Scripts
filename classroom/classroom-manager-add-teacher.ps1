@@ -14,6 +14,11 @@
     Última atualização: 08/04/2025
 #>
 
+# Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Clear-Host
+
 # Importa as turmas a partir de um arquivo CSV localizado na pasta Downloads
 $turmas = Import-Csv "D:\Downloads\classroom-manager.csv"
 

@@ -1,14 +1,14 @@
-﻿﻿<#
+﻿<#
 .SINOPSE
-    Script descontinuado.
+Script descontinuado.
 
 .DESCRIÇÃO
-    Este script foi descontinuado. Versão antiga de transferência de propriedade no Classroom.
+Este script foi descontinuado. Versão antiga de transferência de propriedade no Classroom.
 
 .NOTAS
-    Autor: Diogo
-    Status: Deprecated
-    Última atualização: 01/04/2025
+Autor: Diogo
+Status: Deprecated
+Última atualização: 01/04/2025
 #>
 
 # Criar as turmas do Google Classroom com os parâmetros corretos
@@ -16,16 +16,16 @@ $turmas = Import-Csv "D:\Downloads\classroom_manager.csv"
 
 foreach ($turma in $turmas) {
 
-    $nome = $turma.name
-    $alias = $turma.Aliases
-    $section = $turma.section
-    $room = $turma.room
-    $teacher = $turma.ownerEmail
-    $id = $turma.id
+  $nome = $turma.name
+  $alias = $turma.Aliases
+  $section = $turma.section
+  $room = $turma.room
+  $teacher = $turma.ownerEmail
+  $id = $turma.id
 
-    gam course $id add teacher $teacher
-    gam update course $id owner $teacher
-    Write-Host "Curso $nome atualizado para o professor $teacher"
+  gam course $id add teacher $teacher
+  gam update course $id owner $teacher
+  Write-Host "Curso $nome atualizado para o professor $teacher"
 
 }
 
