@@ -1,4 +1,4 @@
-﻿﻿<#
+﻿<#
   .SINOPSE
     Adiciona os administradores responsáveis em todas as turmas do Google Classroom.
 
@@ -47,7 +47,7 @@ foreach ($turma in $turmas) {
   $id = $turma.id
   # Adiciona os administradores/coordenadores como professores adicionais  
   foreach ($admin in $admins) {
-    # gam course $id add teacher $admin
+    gam course $id add teacher $admin
     Write-Host "$admin"
   }
 }

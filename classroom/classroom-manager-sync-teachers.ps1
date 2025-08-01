@@ -18,13 +18,10 @@ $turmas = Import-Csv "D:\Downloads\classroom_manager.csv"
 
 foreach ($turma in $turmas) {
 
-    $id = $turma.id
-    $teacherGroup = $turma.teachergroup
+  $id = $turma.id
+  $teacherGroup = $turma.teachergroup
 
-    gam course $id sync teachers group $teacherGroup
-    #gam update course $id owner $teacher
-
-    #Write-Warning "Professor $teacher adicionado ao curso $nome."
+  gam course $id sync teachers group $teacherGroup
 
 }
 

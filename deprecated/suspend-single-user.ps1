@@ -1,17 +1,20 @@
 ﻿<#
 .SINOPSE
-    Suspende uma conta de usuário no Active Directory e Google Workspace.
+  Script descontinuado — mantido apenas como referência.
 
 .DESCRIÇÃO
-    Este script redefine a senha do usuário, suspende sua conta no AD e no Google Workspace,
-    move a conta para a OU "Contas Suspensas", remove o usuário de todos os grupos e exibe a nova senha gerada.
+  Este script foi substituído por uma versão unificada mais moderna, que permite suspender contas
+  tanto individualmente quanto por lote via CSV. A nova versão realiza backup de grupos do AD e
+  Google, altera senha e move o usuário para a OU "Contas Suspensas".
+
+  ✅ Script novo: suspend-users.ps1
 
 .EXEMPLO
-    .\suspend-single-user.ps1
+  Não recomendado o uso deste script.
 
 .NOTAS
-    Autor: Diogo
-    Última atualização: 03/04/2025
+  Autor: Diogo
+  Descontinuado em: 01/08/2025
 #>
 
 # Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
