@@ -5,87 +5,243 @@
 .DESCRIÇÃO
   Este script importa um arquivo CSV contendo os IDs das turmas e os grupos de professores responsáveis por cada uma.
   Em seguida, utiliza o GAM para sincronizar os professores em cada turma de forma automatizada.
-  Apenas turmas com alterações reais (adição/remoção de professores) serão listadas ao final.
+  Apenas turmas com alterações reais (adição/remoção de professores) ou com saída inesperada serão listadas ao final.
 
 .EXEMPLO
   .\classroom-manager-sync-teachers.ps1
+  .\classroom-manager-sync-teachers.ps1 -CsvPath "D:\Downloads\classroom_manager.csv"
+  .\classroom-manager-sync-teachers.ps1 -DebugGAM
 
 .NOTAS
   Autor: Diogo
   Criado em: 03/04/2025
-  Atualizado em: 01/08/2025
+  Atualizado em: 08/08/2025
 
   Changelog:
-    - 03/04/2025 v1.0 - Criação do script
-    - 01/08/2025 v1.1 - Validação, ocultação de output padrão e resumo final
+    - 03/04/2025 v1.0  - Criação do script
+    - 01/08/2025 v1.1  - Validação, tratamento de saída GAM e resumo final
+    - 08/08/2025 v1.2  - Adicionado switch -DebugGAM e parser robusto stdout/stderr
+    - 08/08/2025 v1.2.1 - Aceita resumos com prefixo "Course: <id>, Add/Remove N Teachers"
 #>
 
+# >>> O param PRECISA vir antes de qualquer comando executável <<<
+param(
+  # Caminho do CSV. Deve conter colunas: name, id, teachergroup
+  [Parameter(Mandatory = $false)]
+  [string]$CsvPath = "D:\Downloads\classroom_manager.csv",
+
+  # Quando presente, imprime stdout/stderr completos do GAM para diagnóstico
+  [Parameter(Mandatory = $false)]
+  [switch]$DebugGAM
+)
+
 # Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
+# (Este bloco vem após o param para respeitar a exigência do PowerShell)
 $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Clear-Host
 
-# Caminho do arquivo CSV de entrada
-$csvPath = "D:\Downloads\classroom_manager.csv"
-
-# Verifica se o arquivo CSV existe
-if (-not (Test-Path $csvPath)) {
-  Write-Error "❌ Arquivo CSV não encontrado: $csvPath"
+# ---------------------------------------------
+# Validação do CSV
+# ---------------------------------------------
+if (-not (Test-Path -LiteralPath $CsvPath)) {
+  Write-Error "❌ Arquivo CSV não encontrado: $CsvPath"
   exit 1
 }
 
-# Lista de turmas que tiveram alterações reais
+# ---------------------------------------------
+# Estruturas auxiliares para o resumo
+# ---------------------------------------------
 $turmasComMudancas = @()
+$turmasComOutputInesperado = @()
 
+# ---------------------------------------------
 # Importa os dados do CSV
-$turmas = Import-Csv -Path $csvPath
+# ---------------------------------------------
+try {
+  $turmas = Import-Csv -Path $CsvPath
+}
+catch {
+  Write-Error "❌ Falha ao ler o CSV: $CsvPath. Detalhes: $($_.Exception.Message)"
+  exit 1
+}
 
+# ---------------------------------------------
+# Função: executa o GAM e faz o parse de stdout/stderr
+# ---------------------------------------------
+function Invoke-GamSyncTeachers {
+  param(
+    [Parameter(Mandatory)]
+    [string]$CourseId,
+
+    [Parameter(Mandatory)]
+    [string]$TeacherGroup
+  )
+
+  # Configura processo para capturar stdout/stderr separadamente
+  $psi = New-Object System.Diagnostics.ProcessStartInfo
+  $psi.FileName = "gam"
+  $psi.Arguments = "course `"$CourseId`" sync teachers group `"$TeacherGroup`""
+  $psi.RedirectStandardOutput = $true
+  $psi.RedirectStandardError = $true
+  $psi.UseShellExecute = $false
+  $psi.CreateNoWindow = $true
+
+  $proc = New-Object System.Diagnostics.Process
+  $proc.StartInfo = $psi
+  [void]$proc.Start()
+
+  # Lê os dois streams até o fim
+  $stdOut = $proc.StandardOutput.ReadToEnd()
+  $stdErr = $proc.StandardError.ReadToEnd()
+  $proc.WaitForExit()
+
+  # Debug opcional
+  if ($DebugGAM) {
+    Write-Host "— DEBUG (stdout) —" -ForegroundColor DarkCyan
+    if ([string]::IsNullOrWhiteSpace($stdOut)) { Write-Host "  (vazio)" } else { ($stdOut -split "(`r`n|`n)") | ForEach-Object { Write-Host "  $_" } }
+    Write-Host "— DEBUG (stderr) —" -ForegroundColor DarkCyan
+    if ([string]::IsNullOrWhiteSpace($stdErr)) { Write-Host "  (vazio)" } else { ($stdErr -split "(`r`n|`n)") | ForEach-Object { Write-Host "  $_" } }
+  }
+
+  # Regex tolerantes a variações (inclui "Course: <id>, Add/Remove N Teachers")
+  $rxAddSum = [regex]::new('(?im)^\s*(?:Course:\s+.+?,\s*)?Add\s+(\d+)\s+Teachers?\s*$', 'IgnoreCase, Multiline')
+  $rxRemoveSum = [regex]::new('(?im)^\s*(?:Course:\s+.+?,\s*)?Remove\s+(\d+)\s+Teachers?\s*$', 'IgnoreCase, Multiline')
+  $rxItemAdded = [regex]::new('(?im)^\s*Course:\s+.+?\s+Teacher:\s+.+\s+Added\s*$', 'IgnoreCase, Multiline')
+  $rxItemRemoved = [regex]::new('(?im)^\s*Course:\s+.+?\s+Teacher:\s+.+\s+Removed\s*$', 'IgnoreCase, Multiline')
+
+  # Linhas "ok" em stdout: qualquer um dos formatos conhecidos
+  $rxOkLinesOut = [regex]::new('(?im)^\s*(?:Course:\s+.+?\s+Teacher:\s+.+\s+(?:Added|Removed)|(?:Add|Remove)\s+\d+\s+Teachers?|Course:\s+.+?,\s*(?:Add|Remove)\s+\d+\s+Teachers?)\s*$', 'IgnoreCase, Multiline')
+
+  # Ruído típico em stderr
+  $rxNoiseErr = [regex]::new('(?im)^\s*(Getting|Got|Course:)\b')
+
+  # Contadores
+  $addCount = 0
+  $removeCount = 0
+
+  # 1) extrai contadores-resumo via stdout (com e sem prefixo "Course:")
+  foreach ($m in $rxAddSum.Matches($stdOut)) { $addCount = [int]$m.Groups[1].Value }
+  foreach ($m in $rxRemoveSum.Matches($stdOut)) { $removeCount = [int]$m.Groups[1].Value }
+
+  # 2) fallback: se não houver sumário, conta linhas item-a-item
+  if ($addCount -eq 0 -and $removeCount -eq 0) {
+    $addCount = ($rxItemAdded.Matches($stdOut)).Count
+    $removeCount = ($rxItemRemoved.Matches($stdOut)).Count
+  }
+
+  # 3) detecta linhas inesperadas em stdout
+  $temSaidaInesperada = $false
+  $linhasStdOut = $stdOut -split "(`r`n|`n)"
+  foreach ($linha in $linhasStdOut) {
+    if ([string]::IsNullOrWhiteSpace($linha)) { continue }
+    if (-not $rxOkLinesOut.IsMatch($linha)) {
+      $temSaidaInesperada = $true
+      break
+    }
+  }
+
+  # 4) filtra stderr: ignora ruído "Getting/Got/Course:", considera o resto relevante
+  $linhasStdErr = $stdErr -split "(`r`n|`n)"
+  $stderrRelevante = @()
+  foreach ($linha in $linhasStdErr) {
+    if ([string]::IsNullOrWhiteSpace($linha)) { continue }
+    if (-not $rxNoiseErr.IsMatch($linha)) {
+      $stderrRelevante += $linha
+    }
+  }
+  if ($stderrRelevante.Count -gt 0) {
+    $temSaidaInesperada = $true
+  }
+
+  # Retorna um objeto com tudo que precisamos
+  [pscustomobject]@{
+    AddCount         = $addCount
+    RemoveCount      = $removeCount
+    StdOutLines      = $linhasStdOut
+    StdErrRelevant   = $stderrRelevante
+    UnexpectedOutput = $temSaidaInesperada
+    ExitCode         = $proc.ExitCode
+  }
+}
+
+# ---------------------------------------------
+# Loop principal por turma
+# ---------------------------------------------
 foreach ($turma in $turmas) {
   $nome = $turma.name
   $id = $turma.id
   $teacherGroup = $turma.teachergroup
 
-  # Valida se os dados necessários estão presentes
-  if ([string]::IsNullOrWhiteSpace($teacherGroup)) {
-    Write-Warning "⚠️  Turma $nome [$id] com grupo de professores ausente. Linha ignorada."
-    Start-Sleep -Seconds 3
+  if ([string]::IsNullOrWhiteSpace($id)) {
+    Write-Warning "⚠️  Turma com ID ausente. Linha ignorada: $($turma | Out-String)"
+    Start-Sleep -Milliseconds 200
     continue
   }
 
-  Write-Host "🔄 Sincronizando professores da turma $nome [$id] com o grupo $teacherGroup..."
-
-  # Executa o GAM e captura a saída
-  $output = & gam course $id sync teachers group $teacherGroup 2>&1
-
-  # Verifica se houve alterações reais (add/remove > 0)
-  $teveMudanca = $false
-  foreach ($linha in $output) {
-    if ($linha -match "Add (\d+) Teachers" -or $linha -match "Remove (\d+) Teachers") {
-      $qtd = [int]$Matches[1]
-      if ($qtd -gt 0) {
-        $teveMudanca = $true
-        break
-      }
-    }
+  if ([string]::IsNullOrWhiteSpace($teacherGroup)) {
+    Write-Warning "⚠️  Turma $nome [$id] com grupo de professores ausente. Linha ignorada."
+    Start-Sleep -Milliseconds 200
+    continue
   }
 
-  if ($teveMudanca) {
-    Write-Host "📌 Alterações na turma $nome [$id]:"
-    $output | ForEach-Object { Write-Host "   $_" }
-    $turmasComMudancas += "$nome [$id]"
+  Write-Host ""
+  Write-Host "🔄 Sincronizando professores da turma $nome [$id] com o grupo $teacherGroup..." -ForegroundColor White
+
+  $result = Invoke-GamSyncTeachers -CourseId $id -TeacherGroup $teacherGroup
+
+  # Verifica código de saída do processo (0 é sucesso); se != 0, marca como inesperado
+  if ($result.ExitCode -ne 0) {
+    Write-Host "⚠️  O processo do GAM retornou ExitCode $($result.ExitCode)." -ForegroundColor Yellow
+    $result.UnexpectedOutput = $true
   }
-  else {
+
+  # Exibe resumo legível
+  if ($result.AddCount -eq 0 -and $result.RemoveCount -eq 0) {
     Write-Host "✅ Nenhuma alteração necessária." -ForegroundColor DarkGreen
   }
+  else {
+    Write-Host "📌 Alterações na turma $nome [$id]:" -ForegroundColor Cyan
+    if ($result.AddCount -gt 0) { Write-Host "   ➕ $($result.AddCount) professor(es) adicionado(s)." }
+    if ($result.RemoveCount -gt 0) { Write-Host "   ➖ $($result.RemoveCount) professor(es) removido(s)." }
+    $turmasComMudancas += "$nome [$id]"
+  }
 
-  Start-Sleep -Milliseconds 300
+  # Se houve saída inesperada, mostra detalhes úteis (stdout limpo + stderr relevante)
+  if ($result.UnexpectedOutput) {
+    Write-Host "⚠️  Saída não padronizada do GAM. Detalhes (stdout):"
+    if ($result.StdOutLines.Count -eq 0 -or ($result.StdOutLines.Count -eq 1 -and [string]::IsNullOrWhiteSpace($result.StdOutLines[0]))) {
+      Write-Host "   (vazio)"
+    }
+    else {
+      $result.StdOutLines | ForEach-Object { if ($_ -ne $null -and $_.Trim().Length -gt 0) { Write-Host "   $_" } }
+    }
+
+    if ($result.StdErrRelevant.Count -gt 0) {
+      Write-Host "⚠️  Mensagens relevantes em stderr:"
+      $result.StdErrRelevant | ForEach-Object { Write-Host "   $_" }
+    }
+
+    $turmasComOutputInesperado += "$nome [$id]"
+  }
+
+  Start-Sleep -Milliseconds 150
 }
 
+# ---------------------------------------------
 # Resumo final
+# ---------------------------------------------
+Write-Host "`n📋 Resumo Final:" -ForegroundColor White
+
 if ($turmasComMudancas.Count -gt 0) {
-  Write-Host "⚠️  Turmas com alterações detectadas:" -ForegroundColor Yellow
+  Write-Host "✅ Turmas com alterações:" -ForegroundColor Yellow
   $turmasComMudancas | ForEach-Object { Write-Host "  $_" }
 }
 else {
   Write-Host "🎉 Todas as turmas já estavam sincronizadas corretamente!" -ForegroundColor Green
+}
+
+if ($turmasComOutputInesperado.Count -gt 0) {
+  Write-Host "⚠️  Turmas com saída inesperada do GAM (verifique manualmente):" -ForegroundColor Red
+  $turmasComOutputInesperado | ForEach-Object { Write-Host "  $_" }
 }
