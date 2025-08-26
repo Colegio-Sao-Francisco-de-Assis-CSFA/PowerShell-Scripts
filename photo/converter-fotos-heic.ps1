@@ -18,7 +18,7 @@ if ($heicFiles.Count -eq 0) {
 foreach ($file in $heicFiles) {
     $outputPath = [System.IO.Path]::ChangeExtension($file.FullName, ".jpg")
     Write-Host "Convertendo: $($file.FullName) → $outputPath"
-    magick convert "$($file.FullName)" "$outputPath"
+    magick "$($file.FullName)" "$outputPath"
 }
 
 Write-Host "`n✅ Conversão concluída!"

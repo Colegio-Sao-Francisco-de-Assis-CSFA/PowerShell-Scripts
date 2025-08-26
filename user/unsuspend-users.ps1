@@ -1,4 +1,4 @@
-﻿﻿$reativos = Import-Csv "D:\Downloads\reativos.csv"
+﻿$reativos = Import-Csv "D:\Downloads\reativos.csv"
 
 foreach ($reativo in $reativos) {
 
