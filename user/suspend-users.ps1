@@ -17,7 +17,7 @@
 
 # Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
 #$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+#[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Clear-Host
 
 Add-Type -AssemblyName System.Web
