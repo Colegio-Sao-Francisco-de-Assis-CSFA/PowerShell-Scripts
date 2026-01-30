@@ -20,7 +20,7 @@ $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
 Clear-Host
 
 # Importa as turmas a partir de um arquivo CSV
-$turmas = Import-Csv "D:\Downloads\classroom_manager.csv"
+$turmas = Import-Csv "C:\Users\dnunes\Downloads\classroom_manager.csv"
 
 # Itera sobre cada entrada e cria o curso
 foreach ($turma in $turmas) {

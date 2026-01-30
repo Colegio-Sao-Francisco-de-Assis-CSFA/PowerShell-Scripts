@@ -13,7 +13,7 @@
     Última atualização: 03/04/2025
 #>
 
-$Leases = Import-Csv "D:\Downloads\dhcp.csv"
+$Leases = Import-Csv "C:\Users\dnunes\Downloads\dhcp.csv"
 
 foreach ($Lease in $Leases) {
 

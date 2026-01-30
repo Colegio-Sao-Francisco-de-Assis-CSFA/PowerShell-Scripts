@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SINOPSE
   Verifica o proprietário atual do curso e, se diferente do informado no CSV, transfere automaticamente a propriedade.
 
@@ -19,13 +19,13 @@
   Atualizado em: 30/07/2025
 #>
 
-# Força encoding UTF-8 BOM e limpa terminal
-$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
+# Força encoding UTF-8 e limpa terminal
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Clear-Host
 
-Set-Location 'D:\Scripts'
-$turmas = Import-Csv 'D:\Downloads\classroom_manager.csv'
+Set-Location "C:\Scripts"
+$turmas = Import-Csv "C:\Users\dnunes\Downloads\classroom_manager.csv"
 
 foreach ($t in $turmas) {
   $id = $t.id

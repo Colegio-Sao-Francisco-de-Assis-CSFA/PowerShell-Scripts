@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SINOPSE
 Arquiva turmas do Google Classroom e atualiza seus nomes com o ano finalizado.
 
@@ -17,13 +17,13 @@ Autor: Diogo
 Última atualização: 08/04/2025
 #>
 
-# Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
-$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
+# Força o encoding UTF-8 para compatibilidade e limpa o terminal
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Clear-Host
 
 # Importa os dados das turmas a partir de um CSV
-$turmas = Import-Csv "D:\Downloads\classroom_manager.csv"
+$turmas = Import-Csv "C:\Users\dnunes\Downloads\classroom_manager.csv"
 
 # Solicita o ano de finalização das turmas
 $ano = Read-Host "Que ano foi finalizado?"
