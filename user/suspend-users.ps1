@@ -22,7 +22,7 @@ Clear-Host
 
 Add-Type -AssemblyName System.Web
 
-$backupDir = "D:\Scripts\usuarios-suspensos"
+$backupDir = "C:\Scripts\usuarios-suspensos"
 if (-not (Test-Path $backupDir)) {
   New-Item -ItemType Directory -Path $backupDir | Out-Null
 }

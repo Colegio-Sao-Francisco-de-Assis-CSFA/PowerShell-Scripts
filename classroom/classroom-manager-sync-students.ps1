@@ -28,7 +28,7 @@
 param(
   # Caminho do CSV. Deve conter colunas: name, id, studentgroup
   [Parameter(Mandatory = $false)]
-  [string]$CsvPath = "D:\Downloads\classroom_manager.csv",
+  [string]$CsvPath = "C:\Users\dnunes\Downloads\classroom_manager.csv",
 
   # Quando presente, imprime stdout/stderr completos do GAM para diagnóstico
   [Parameter(Mandatory = $false)]

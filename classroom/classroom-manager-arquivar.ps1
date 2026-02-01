@@ -47,8 +47,8 @@ foreach ($turma in $turmas) {
 
   Write-Warning "Alias $alias deletado."
 
-  # Sincroniza os professores responsáveis com o grupo 'owners'
-  gam course $id sync teachers group "owners@colsaofrancisco.com.br"
+  # Sincroniza os professores responsáveis com o grupo 'vazio', removendo todos os outros que não sejam o proprietário da turma
+  gam course $id sync teachers group "vazio@colsaofrancisco.com.br"
 }
 
 Write-Warning "Script finalizado."
