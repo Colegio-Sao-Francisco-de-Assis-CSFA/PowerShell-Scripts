@@ -1,27 +1,35 @@
 ﻿<#
 .SINOPSE
-  Limpa todos os membros de grupos utilizando GAM sync.
+  Limpa todos os membros de grupos utilizando sincronização via GAM.
 
 .DESCRIÇÃO
   O script solicita um arquivo CSV contendo uma única coluna chamada "email".
   Para cada grupo listado, os membros são sincronizados com o grupo
-  vazio@colsaofrancisco.com.br utilizando o comando "gam sync group".
+  vazio@colsaofrancisco.com.br utilizando o comando:
+
+    gam update group <grupo_destino> sync members group <grupo_referencia>
+
   Como o grupo de referência não possui membros, todos os participantes
   dos grupos de destino serão removidos.
 
 .EXEMPLO
-  # Limpa todos os membros dos grupos listados no CSV,
-  # sincronizando-os com o grupo vazio@colsaofrancisco.com.br
+  # CSV de entrada (uma única coluna chamada "email"):
   #
+  # email
+  # turma1@colsaofrancisco.com.br
+  # turma2@aluno.colsaofrancisco.com.br
+  #
+  # Execução do script:
   .\gam-limpar-membros-grupos.ps1
 
 .NOTAS
   Autor: Diogo
   Criado em: 31/01/2026
-  Atualizado em: 31/01/2026
+  Atualizado em: 02/02/2026
 
   Changelog:
     - 31/01/2026 v1.0 - Criação do script
+    - 02/02/2026 v1.1 - Correção do comando GAM e tratamento adequado do output
 #>
 
 # Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
@@ -45,7 +53,7 @@ $csvPath = Read-Host "Informe o caminho completo do arquivo CSV"
 # Valida se o arquivo existe
 if (-not (Test-Path $csvPath)) {
   Write-Host "❌ Arquivo CSV não encontrado. Encerrando o script." -ForegroundColor Red
-  exit
+  exit 1
 }
 
 # Importa o CSV
@@ -72,18 +80,59 @@ foreach ($grupo in $grupos) {
 
   Write-Host "[$total] Limpando grupo: $emailGrupo" -ForegroundColor Gray
 
-  try {
-    # Sincroniza os membros do grupo destino com o grupo vazio
-    gam sync group $emailGrupo members group vazio@colsaofrancisco.com.br `
-      > $null 2>&1
+  # Monta os argumentos corretos do GAM
+  $arguments = @(
+    "update"
+    "group"
+    $emailGrupo
+    "sync"
+    "members"
+    "group"
+    "vazio@colsaofrancisco.com.br"
+  )
+
+  # Executa o GAM capturando stdout e stderr
+  $process = Start-Process `
+    -FilePath "gam" `
+    -ArgumentList $arguments `
+    -NoNewWindow `
+    -RedirectStandardOutput "$env:TEMP\gam_stdout.txt" `
+    -RedirectStandardError "$env:TEMP\gam_stderr.txt" `
+    -PassThru `
+    -Wait
+
+  $stdout = Get-Content "$env:TEMP\gam_stdout.txt" -Raw
+  $stderr = Get-Content "$env:TEMP\gam_stderr.txt" -Raw
+
+  if ($process.ExitCode -eq 0) {
+
+    # Extrai números do stdout do GAM
+    $removed = ($stdout | Select-String 'Remove (\d+) Members').Matches.Groups[1].Value
+    $added = ($stdout | Select-String 'Add (\d+) Members').Matches.Groups[1].Value
+
+    if (-not $removed) { $removed = 0 }
+    if (-not $added) { $added = 0 }
 
     Write-Host "   ✔ Grupo limpo com sucesso." -ForegroundColor Green
+    Write-Host "     Membros removidos : $removed"
+    Write-Host "     Membros adicionados: $added"
+
     $sucesso++
   }
-  catch {
+  else {
     Write-Host "   ❌ Erro ao limpar o grupo." -ForegroundColor Red
+    Write-Host "   Código de saída do GAM: $($process.ExitCode)" -ForegroundColor Red
+
+    if (-not [string]::IsNullOrWhiteSpace($stderr)) {
+      Write-Host "   Detalhes do erro:" -ForegroundColor DarkRed
+      Write-Host "   $stderr"
+    }
+
     $erro++
   }
+
+  # Remove arquivos temporários
+  Remove-Item "$env:TEMP\gam_stdout.txt", "$env:TEMP\gam_stderr.txt" -ErrorAction SilentlyContinue
 }
 
 # Resumo final

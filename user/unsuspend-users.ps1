@@ -1,55 +1,110 @@
-﻿$reativos = Import-Csv "D:\Downloads\reativos.csv"
+﻿# Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Clear-Host
+
+<#
+.SINOPSE
+  Reativa alunos no Active Directory e no Google Workspace a partir de um CSV.
+
+.DESCRIÇÃO
+  Este script lê um arquivo CSV com alunos reativos, verifica se a conta está
+  desabilitada no Active Directory e, caso esteja, reativa o usuário, move para
+  a OU correta, ajusta grupos, redefine senha e reativa o usuário no Google Workspace.
+
+.EXEMPLO
+  .\reativar-alunos.ps1
+
+.NOTAS
+  Autor: Diogo
+  Criado em: 03/04/2025
+  Atualizado em: 02/02/2026
+
+  Changelog:
+    - 03/04/2025 v1.0 - Criação do script
+    - 02/02/2026 v1.1 - Correção do Move-ADObject e padronização de output
+#>
+
+# Importa o CSV com os alunos reativos
+$reativos = Import-Csv "C:\Users\dnunes\Downloads\reativos.csv"
+
+# Contadores para estatística final
+$total = 0
+$reativados = 0
+$ativos = 0
 
 foreach ($reativo in $reativos) {
 
-    $firstname = $reativo.firstname
-    $surname = $reativo.surname
-    $cod = $reativo.NUMERO
-    $email = $reativo.email
-    $org = $reativo.org
-    $grupo = $reativo.grupo
-    $adusername = $reativo.adusername
-    $adou = $reativo.ADOU
-    $password = $reativo.Password
-    $datanascto = $reativo.DataNascto
+  $total++
 
-    # Verifica se a conta está desabilitada
-    $adUser = Get-ADUser -Identity $adusername -Properties Enabled
+  # Dados do aluno
+  $firstname = $reativo.firstname
+  $surname = $reativo.surname
+  $cod = $reativo.NUMERO
+  $email = $reativo.email
+  $org = $reativo.org
+  $grupo = $reativo.grupo
+  $adusername = $reativo.adusername
+  $adou = $reativo.ADOU
+  $password = $reativo.Password
+  $datanascto = $reativo.DataNascto
 
-    if ($adUser.Enabled -eq $false) {
-        # Marca a conta do aluno como ativa de novo e o coloca no grupo certo
-        Set-ADUser -Identity $adusername -Enabled $true
-        Write-Host "Conta do Active Directory $adusername do aluno $firstname $surname reativada."
+  # Busca o usuário no AD
+  $adUser = Get-ADUser -Identity $adusername -Properties Enabled, DistinguishedName
 
-        # Move o usuário para a Unidade Organizacional e adiciona ao grupo dos alunos
-        Get-ADUser -Identity $adusername | Move-ADObject -TargetPath $adou
-        Write-Host "$adusername movido para a OU $adou"
+  if ($adUser.Enabled -eq $false) {
 
-        Add-ADGroupMember -Identity ALUNOS -Members $adusername
-        Write-Host "$adusername adicionado ao grupo ALUNOS."
+    Write-Host "🔄 Reativando usuário $adusername ($firstname $surname)..." -ForegroundColor Cyan
 
-        # Altera a senha do Active Directory do usuário
-        Set-ADAccountPassword -Identity $adusername -NewPassword (ConvertTo-SecureString "$password" -AsPlainText -Force)
+    # Reativa a conta no AD
+    Set-ADUser -Identity $adusername -Enabled $true
 
-        Set-ADUser -Identity $adusername -PasswordNeverExpires $true -ChangePasswordAtLogon $false
-        Write-Host "Senha do usuário $adusername alterada para $password"
+    # Move para a OU correta
+    Move-ADObject -Identity $adUser.DistinguishedName -TargetPath $adou
 
-        # Reativa o usuário no Google Workspace
-        gam update user $email firstname "$firstname" lastname "$surname" `
-            password "$password" suspended off changepassword on `
-            externalid organization $cod `
-            org /Alunos/$org `
-            Informaes_do_Funcionrio.Data_de_Nascimento $datanascto
-        Write-Host "$email reativado no Google Workspace."
+    # Adiciona ao grupo ALUNOS
+    Add-ADGroupMember -Identity ALUNOS -Members $adusername
 
-        # Adiciona o usuário ao grupo correto no Google Workspace
-        gam update group $grupo add member user $email
-        Write-Host "$email adicionado ao grupo $grupo."
+    # Redefine senha
+    Set-ADAccountPassword `
+      -Identity $adusername `
+      -NewPassword (ConvertTo-SecureString $password -AsPlainText -Force)
 
-    }
-    else {
-        Write-Warning "Conta do Active Directory $adusername já está ativa. Nenhuma ação necessária."
-    }
+    Set-ADUser `
+      -Identity $adusername `
+      -PasswordNeverExpires $true `
+      -ChangePasswordAtLogon $false
+
+    # Reativa no Google Workspace
+    gam update user $email `
+      firstname "$firstname" `
+      lastname "$surname" `
+      password "$password" `
+      suspended off `
+      changepassword on `
+      externalid organization $cod `
+      org /Alunos/$org `
+      Informaes_do_Funcionrio.Data_de_Nascimento $datanascto
+
+    # Adiciona ao grupo correto no Google Workspace
+    gam update group $grupo add member user $email
+
+    Write-Host "✅ Usuário $adusername reativado com sucesso." -ForegroundColor Green
+    $reativados++
+
+  }
+  else {
+
+    Write-Host "ℹ️ $adusername já está ativo. Nenhuma ação necessária." -ForegroundColor Yellow
+    $ativos++
+  }
 }
 
-Write-Warning "Não se esqueça do Portal SAS e da cantina."
+# Resumo final
+Write-Host ""
+Write-Host "📊 RESUMO FINAL" -ForegroundColor Cyan
+Write-Host "Total de registros: $total"
+Write-Host "Reativados: $reativados"
+Write-Host "Já ativos: $ativos"
+
+Write-Warning "⚠️ Não se esqueça do Portal SAS e da cantina."
