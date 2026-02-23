@@ -15,10 +15,10 @@
 
 #Mudar a senha do AD dos usuários
 
-$servico = "ad" #Coloque aqui se quer alterar a senha do AD ou do e-mail do usuário, as variáveis possíveis são "ad", "email" ou "ambos"
+$servico = "email" #Coloque aqui se quer alterar a senha do AD ou do e-mail do usuário, as variáveis possíveis são "ad", "email" ou "ambos"
 $tipousuario = "func" #Aluno ou funcionário?
 $adusername = "erodrigues" #Coloque aqui o usuário do Active Directory
-$email = "manuela.melo@aluno.colsaofrancisco.com.br" #Coloque aqui o e-mail do usuário
+$email = "joaquim.lima@aluno.colsaofrancisco.com.br" #Coloque aqui o e-mail do usuário
 $password = "Mudar123" #Coloque aqui a senha para ser utilizada
 
 if ($servico -eq "ad") {
