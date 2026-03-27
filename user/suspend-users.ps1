@@ -265,10 +265,6 @@ function SuspenderUsuario {
 
   }
 
-  else {
-    Write-Host "AD: nenhum grupo para remover (backup salvo em: $saidaPath)" -ForegroundColor Yellow
-  }
-
   # Remove CSV temporário do Google (opcional; se você quiser manter, comente a linha abaixo)
   Remove-Item $tempGoogleGroupsCsv -ErrorAction SilentlyContinue
 
