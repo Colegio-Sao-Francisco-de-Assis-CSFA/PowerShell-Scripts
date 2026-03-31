@@ -3,7 +3,7 @@
 
 Set-StrictMode -Version Latest
 
-function Get-RaizProjeto {
+function Get-ProjectRoot {
   <#
   .SINOPSE
     Retorna a raiz do projeto com base na pasta do módulo.
@@ -12,7 +12,7 @@ function Get-RaizProjeto {
   return (Split-Path -Parent $PSScriptRoot)
 }
 
-function Import-ConfiguracaoEnv {
+function Import-EnvConfiguration {
   <#
   .SINOPSE
     Lê o arquivo .env da raiz do projeto e devolve os valores em uma hashtable.
@@ -23,7 +23,7 @@ function Import-ConfiguracaoEnv {
   #>
 
   param(
-    [string]$CaminhoEnv = (Join-Path (Get-RaizProjeto) ".env")
+    [string]$CaminhoEnv = (Join-Path (Get-ProjectRoot) ".env")
   )
 
   $configuracoes = @{}
@@ -59,7 +59,7 @@ function Import-ConfiguracaoEnv {
   return $configuracoes
 }
 
-function Get-ValorConfiguracao {
+function Get-ConfigValue {
   <#
   .SINOPSE
     Retorna o valor de uma chave do .env com suporte a valor padrão.
@@ -100,7 +100,7 @@ function Initialize-LogDirectory {
     [string]$NomeScript
   )
 
-  $baseLogs = Get-ValorConfiguracao -Configuracoes $Configuracoes -Chave "LOGS_DIR"
+  $baseLogs = Get-ConfigValue -Configuracoes $Configuracoes -Chave "LOGS_DIR"
 
   if ([string]::IsNullOrWhiteSpace($baseLogs)) {
     throw "A chave LOGS_DIR não foi definida no arquivo .env."
@@ -115,7 +115,7 @@ function Initialize-LogDirectory {
   return $diretorioScript
 }
 
-function Assert-ComandoDisponivel {
+function Test-CommandAvailable {
   <#
   .SINOPSE
     Garante que um comando externo esteja disponível antes da execução.
@@ -131,7 +131,7 @@ function Assert-ComandoDisponivel {
   }
 }
 
-function Read-CaminhoArquivo {
+function Read-FilePath {
   <#
   .SINOPSE
     Solicita e valida o caminho de um arquivo.
@@ -180,7 +180,7 @@ function Read-CaminhoArquivo {
   }
 }
 
-function Import-CsvValidado {
+function Import-ValidatedCsv {
   <#
   .SINOPSE
     Importa um CSV e valida se ele contém as colunas obrigatórias.
@@ -216,7 +216,7 @@ function Import-CsvValidado {
   return $dados
 }
 
-function Confirmar-Acao {
+function Confirm-Action {
   <#
   .SINOPSE
     Exige confirmação explícita antes de continuar.
@@ -231,7 +231,7 @@ function Confirmar-Acao {
   return ($confirmacao -eq "SIM")
 }
 
-function Write-LogMensagem {
+function Write-LogMessage {
   <#
   .SINOPSE
     Escreve uma mensagem padronizada no terminal e, opcionalmente, em um arquivo de log.
@@ -314,14 +314,14 @@ function New-SecurePassword {
 }
 
 Export-ModuleMember -Function @(
-  "Assert-ComandoDisponivel",
-  "Confirmar-Acao",
-  "Get-RaizProjeto",
-  "Get-ValorConfiguracao",
-  "Import-ConfiguracaoEnv",
-  "Import-CsvValidado",
+  "Confirm-Action",
+  "Get-ConfigValue",
+  "Get-ProjectRoot",
+  "Import-EnvConfiguration",
+  "Import-ValidatedCsv",
   "Initialize-LogDirectory",
   "New-SecurePassword",
-  "Read-CaminhoArquivo",
-  "Write-LogMensagem"
+  "Read-FilePath",
+  "Test-CommandAvailable",
+  "Write-LogMessage"
 )
