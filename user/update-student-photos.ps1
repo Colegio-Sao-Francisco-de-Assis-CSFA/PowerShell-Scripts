@@ -1,65 +1,112 @@
-﻿<#
-.SINOPSE
-    Adicionar sinopse aqui
-
-.DESCRIÇÃO
-    Adicionar descrição detalhada aqui
-
-.EXEMPLO
-    .\updateStudentPhotos.ps1
-
-.NOTAS
-    Autor: Diogo
-    Última atualização: 03/04/2025
-#>
-
-﻿<# 
-    Script: Atualização de fotos dos alunos no Google Workspace
-    Autor: Diogo
-    Descrição: 
-        Este script PowerShell atualiza as fotos dos usuários (alunos) no Google Workspace 
-        com base em um arquivo CSV contendo os e-mails e nomes dos alunos, e em uma pasta com 
-        as fotos nomeadas conforme o e-mail do aluno.
-
-    Requisitos:
-        - O GAM (Google Apps Manager) deve estar instalado e configurado.
-        - O usuário executando o script deve ter permissões para alterar fotos de usuários no domínio.
-        - A pasta com as fotos deve conter os arquivos no formato: email@dominio.com.jpg
-        - O arquivo CSV deve conter pelo menos as colunas: "email" e "NOME" (com esses títulos).
-
-    Instruções:
-        1. Atualize o caminho para o arquivo CSV e a pasta com as fotos conforme necessário.
-        2. Execute o script com permissões adequadas no PowerShell.
-
-    Observação:
-        Fotos ausentes serão registradas como aviso (warning) no terminal.
-#>
-
-# Limpa o terminal
+﻿# Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8BOM'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Clear-Host
 
-#Atualizar fotos dos alunos no Gsuite a partir do arquivo CSV
+<#
+.SINOPSE
+  Atualiza fotos de usuários (alunos) no Google Workspace a partir dos arquivos de uma pasta.
 
-$alunos = Import-Csv "D:\Downloads\todosalunos.csv"
-$gsuitepics = "D:\Downloads\fotos school picture - alunos\gsuite"
+.DESCRIÇÃO
+  Este script percorre todos os arquivos de imagem dentro de uma pasta definida,
+  assumindo que o nome do arquivo é o e-mail do usuário (ex: aluno@dominio.com.jpg).
+
+  Para cada arquivo encontrado:
+    - Extrai o e-mail do nome do arquivo
+    - Executa o comando GAM para atualizar a foto do usuário no Google Workspace
+
+  O script também:
+    - Exibe logs no terminal
+    - Salva um log detalhado no diretório de downloads
+
+.EXEMPLO
+  .\updateStudentPhotos.ps1
+
+.NOTAS
+  Autor: Diogo
+  Criado em: 30/03/2026
+  Atualizado em: 30/03/2026
+
+  Changelog:
+    - 30/03/2026 v1.0 - Leitura direta da pasta (sem CSV)
+#>
+
+# ============================
+# CONFIGURAÇÕES
+# ============================
+
+# Caminho da pasta onde estão as fotos
+$pastaFotos = "C:\Users\dnunes\Downloads\Fotos School Picture\gsuite"
+
+# Extensão dos arquivos (sem ponto)
 $ext = "jpg"
 
-foreach ($aluno in $alunos) {
+# Caminho do log
+$caminhoLog = "C:\Users\dnunes\Downloads\log-update-photos.txt"
 
-  $email = $aluno.email
-  $nome = $aluno.NOME
+# ============================
+# INÍCIO DO PROCESSO
+# ============================
 
-  if (Test-Path -Path "$gsuitepics\$email.$ext" -PathType Leaf) {
+Write-Host "========================================="
+Write-Host " INICIANDO ATUALIZAÇÃO DE FOTOS (GSUITE)"
+Write-Host "=========================================`n"
 
-    gam user $email update photo $gsuitepics\$email.$ext
+# Obtém todos os arquivos da pasta com a extensão definida
+$arquivos = Get-ChildItem -Path $pastaFotos -Filter "*.$ext" -File
 
-    Write-Host "Foto do Google Workspace do usuário $nome alterada."
-
-  }
-  else {
-
-    Write-Warning "Arquivo $gsuitepics\$email.$ext não existe."
-  } 
+# Validação: se não encontrar arquivos
+if ($arquivos.Count -eq 0) {
+  Write-Warning "Nenhum arquivo .$ext encontrado na pasta $pastaFotos"
+  exit
 }
 
-Write-Warning "Script finalizado."
+# Contadores
+$sucesso = 0
+$erro = 0
+
+foreach ($arquivo in $arquivos) {
+
+  # Extrai o e-mail removendo a extensão do arquivo
+  $email = [System.IO.Path]::GetFileNameWithoutExtension($arquivo.Name)
+
+  # Caminho completo da imagem
+  $caminhoCompleto = $arquivo.FullName
+
+  try {
+    # Executa o comando GAM para atualizar a foto
+    gam user $email update photo "$caminhoCompleto" | Out-Null
+
+    # Log de sucesso
+    $mensagem = "[SUCESSO] Foto atualizada para: $email"
+    Write-Host $mensagem -ForegroundColor Green
+    $mensagem | Out-File -FilePath $caminhoLog -Append
+
+    $sucesso++
+
+  }
+  catch {
+    # Log de erro
+    $mensagem = "[ERRO] Falha ao atualizar foto de: $email"
+    Write-Host $mensagem -ForegroundColor Red
+    $mensagem | Out-File -FilePath $caminhoLog -Append
+
+    $erro++
+  }
+}
+
+# ============================
+# RESUMO FINAL
+# ============================
+
+Write-Host "`n========================================="
+Write-Host " RESUMO"
+Write-Host "========================================="
+
+Write-Host "Sucesso: $sucesso" -ForegroundColor Green
+Write-Host "Erros:   $erro" -ForegroundColor Red
+
+$mensagemFinal = "Finalizado - Sucesso: $sucesso | Erros: $erro"
+$mensagemFinal | Out-File -FilePath $caminhoLog -Append
+
+Write-Host "`nProcesso finalizado."

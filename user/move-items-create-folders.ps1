@@ -13,7 +13,7 @@
     Última atualização: 03/04/2025
 #>
 
-﻿<#
+<#
     Script: Organização e renomeação de fotos de alunos por turma
     Autor: Diogo
     Descrição:
@@ -37,10 +37,10 @@
 Clear-Host
 
 # Caminho para a pasta raiz onde estão as fotos dos alunos
-$pastaRaiz = "D:\Downloads\fotos school picture - alunos\arquivo"
+$pastaRaiz = "C:\Users\dnunes\Downloads\Fotos School Picture\arquivo\Alunos"
 
 # Caminho para o arquivo CSV
-$caminhoCsv = "D:\Downloads\todosalunos.csv"
+$caminhoCsv = "C:\Users\dnunes\Downloads\todosalunos.csv"
 
 # Lê os dados do CSV
 $alunos = Import-Csv -Path $caminhoCsv
