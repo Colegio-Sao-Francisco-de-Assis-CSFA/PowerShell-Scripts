@@ -33,8 +33,7 @@
   - `group/`
   - `media/`
   - `misc/`
-  - 
-et/`
+  - `net/`
   - `photo/`
   - `projeto/`
   - `senha/`
