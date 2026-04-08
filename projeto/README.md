@@ -1,5 +1,12 @@
-# Scripts da categoria `projeto`
+﻿# Scripts da categoria `projeto`
 
-Lista de scripts disponíveis nesta categoria:
+Scripts de apoio ao próprio repositório ou a tarefas pontuais que não pertencem claramente a uma categoria operacional.
 
-- `formandos3em.ps1` — Script específico para organização dos formandos do 3º EM.
+## Status
+
+Conteúdo sujeito a revisão e possível redistribuição futura para outras pastas.
+
+## Scripts
+
+- `convert-to-utf8bom.ps1` — Auxilia na conversão de scripts para UTF-8 com BOM.
+- `formandos3em.ps1` — Script pontual relacionado a uma operação específica com formandos.

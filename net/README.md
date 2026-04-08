@@ -1,5 +1,12 @@
-# Scripts da categoria `net`
+﻿# Scripts da categoria 
+et`
 
-Lista de scripts disponíveis nesta categoria:
+Scripts de diagnóstico e coleta de informações de rede.
 
-- `get-net-ipconfig.ps1` — Mostra as configurações de IP da máquina.
+## Status
+
+Pasta simples, mas ainda aguardando revisão de padronização pública.
+
+## Scripts
+
+- `get-net-ipconfig.ps1` — Exibe as configurações de IP da máquina.

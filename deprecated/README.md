@@ -1,10 +1,24 @@
-﻿# Scripts descontinuados (deprecated)
+﻿# Scripts descontinuados
 
-Estes scripts foram substituídos por versões melhores ou deixaram de ser utilizados. Mantidos aqui apenas como referência.
+Esta pasta reúne scripts antigos, específicos ou substituídos por versões mais novas.
 
-- `update-func-photos.ps1` — Substituído por `user/update-user-photos.ps1`.
-- `update-student-photos.ps1` — Substituído por `user/update-user-photos.ps1`.
-- `old-classroom-manager-transfer-ownership.ps1` — Versão antiga de transferência de propriedade no Classroom.
-- `videos-natalia.ps1` — Script específico de projeto, não mais utilizado.
-- `suspend-users.ps1` — Substituído por versão unificada e melhorada.
-- `suspend-single-user.ps1` — Substituído por versão unificada (`suspend.ps1`) com suporte a múltiplos usuários via CSV ou modo interativo.
+## Objetivo
+
+- manter histórico
+- facilitar comparação com versões novas
+- evitar perda de referência técnica
+
+## Aviso
+
+Os scripts desta pasta não devem ser tratados como padrão atual do repositório.
+Eles podem conter caminhos antigos, dependências implícitas ou convenções que ainda não foram sanitizadas.
+
+## Conteúdo
+
+- `old-classroom-manager-transfer-ownership.ps1` — Versão anterior do fluxo de transferência de propriedade no Classroom.
+- `old-suspend-users.ps1` — Versão antiga de suspensão de usuários.
+- `suspend-single-user.ps1` — Fluxo legado de suspensão individual.
+- `unsuspend-users-legacy.ps1` — Fluxo legado de reativação.
+- `update-func-photos.ps1` — Versão antiga de atualização de fotos de funcionários.
+- `update-student-photos.ps1` — Versão antiga de atualização de fotos de estudantes.
+- `videos-natalia.ps1` — Script pontual e descontinuado.
