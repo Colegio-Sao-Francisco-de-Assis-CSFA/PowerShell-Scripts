@@ -52,7 +52,7 @@ Todo script novo ou revisado deve conter cabeçalho no formato abaixo:
   .\nomedoscript.ps1
 
 .NOTAS
-  Autor: Diogo Nunes
+  Autor: [NOME DO AUTOR]
   Criado em: [DATA]
   Atualizado em: [DATA]
 
