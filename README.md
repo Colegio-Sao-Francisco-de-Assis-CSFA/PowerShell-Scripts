@@ -56,8 +56,7 @@ No estado atual do projeto, a estratégia adotada é salvar logs e arquivos temp
 - `group/` Scripts de grupos e sincronizações via GAM
 - `media/` Scripts de áudio e vídeo
 - `misc/` Utilitários diversos
-- 
-et/` Scripts de rede e diagnóstico
+- `net/` Scripts de rede e diagnóstico
 - `photo/` Processamento e organização de fotos
 - `projeto/` Scripts de apoio ao próprio repositório ou tarefas pontuais
 - `senha/` Geração e tratamento de senhas
