@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SINOPSE
   Verifica o proprietário atual do curso e, se diferente do informado no CSV, transfere automaticamente a propriedade.
 
@@ -24,7 +24,7 @@ $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Clear-Host
 
-Set-Location "C:\Scripts"
+Set-Location "C:\Projetos\Scripts"
 $turmas = Import-Csv "C:\Users\dnunes\Downloads\classroom_manager.csv"
 
 foreach ($t in $turmas) {
@@ -75,7 +75,7 @@ foreach ($t in $turmas) {
   if ($upd -match '@SuspendedCourseOwner') {
     Write-Warning "Proprietário atual ($currentOwner) está suspenso. Reativando..."
     gam update user $currentOwner suspended off
-    Start-Sleep -Seconds 3
+    Start-Sleep -Seconds 10
 
     $upd2 = gam update course $id owner $desiredOwner 2>&1
     if ($upd2 -match 'ERROR|Failed') {

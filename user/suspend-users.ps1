@@ -17,7 +17,7 @@
         - Remove o usuário de todos os grupos
         - Suspende o usuário e move para a org "/Contas Suspensas"
   Os backups (txt/csv temporário) são salvos em:
-    C:\Users\dnunes\Downloads\usuarios-suspensos
+    C:\Projetos\Scripts\usuarios-suspensos
 
 .EXEMPLO
   .\suspenderUsuarios.ps1
@@ -25,11 +25,12 @@
 .NOTAS
   Autor: Diogo
   Criado em: 01/08/2025
-  Atualizado em: 12/02/2026
+  Atualizado em: 01/09/2026
 
   Changelog:
     - 01/08/2025 v1.0 - Criação do script
-    - 12/02/2026 v1.1 - Correção de geração de senha e filtro do Get-ADUser; padronização de backups em Downloads
+    - 12/02/2026 v1.1 - Correção de geração de senha e filtro do Get-ADUser; padronização de backups
+    - 01/09/2026 v1.2 - Adicionado caminho padrão para o CSV quando o campo for deixado em branco
 #>
 
 # Força o encoding UTF-8 com BOM para compatibilidade e limpa o terminal
@@ -42,7 +43,10 @@ Clear-Host
 # =========================
 
 # Pasta obrigatória para arquivos locais (logs, temporários, backups)
-$backupDir = "C:\Scripts\usuarios-suspensos"
+$backupDir = "C:\Projetos\Scripts\usuarios-suspensos"
+
+# Caminho padrão do CSV
+$csvPadrao = "C:\Users\dnunes\Downloads\suspensos.csv"
 
 # OU de destino no AD
 $targetOuDn = "OU=Contas Suspensas,DC=csfa,DC=com,DC=br"
@@ -151,10 +155,10 @@ function SuspenderUsuario {
   Write-Host "Processando: $adusername" -ForegroundColor Cyan
   Write-Host "========================================" -ForegroundColor Cyan
 
-  # Gera senha segura (substitui System.Web.Security.Membership)
+  # Gera senha segura
   $password = New-SecurePassword -Length 12 -MinSpecial 2
 
-  # Busca usuário no AD (evita erro do -Filter com variável)
+  # Busca usuário no AD
   try {
     $adUser = Get-ADUser -Identity $adusername -Properties EmailAddress, DistinguishedName
   }
@@ -179,11 +183,20 @@ function SuspenderUsuario {
 
   # ---------- AD: altera senha, desabilita e move OU ----------
   try {
-    Set-ADAccountPassword -Identity $adusername -NewPassword (ConvertTo-SecureString $password -AsPlainText -Force)
-    Set-ADUser -Identity $adusername -ChangePasswordAtLogon $true -PasswordNeverExpires $false -Enabled $false
+    Set-ADAccountPassword `
+      -Identity $adusername `
+      -NewPassword (ConvertTo-SecureString $password -AsPlainText -Force)
+
+    Set-ADUser `
+      -Identity $adusername `
+      -ChangePasswordAtLogon $true `
+      -PasswordNeverExpires $false `
+      -Enabled $false
 
     # Move para OU de suspensos
-    Move-ADObject -Identity $adUser.DistinguishedName -TargetPath $targetOuDn
+    Move-ADObject `
+      -Identity $adUser.DistinguishedName `
+      -TargetPath $targetOuDn
 
     Write-Host "AD: usuário desabilitado, senha redefinida e movido para 'Contas Suspensas'." -ForegroundColor Yellow
   }
@@ -194,6 +207,7 @@ function SuspenderUsuario {
 
   # ---------- AD: backup e remoção de grupos ----------
   $gruposAD = @()
+
   try {
     $gruposAD = Get-ADPrincipalGroupMembership -Identity $adusername |
       Where-Object { $_.Name -ne "Usuários do domínio" }
@@ -203,6 +217,7 @@ function SuspenderUsuario {
   }
 
   $gruposADList = @()
+
   if ($gruposAD.Count -gt 0) {
     $gruposADList = $gruposAD | Select-Object -ExpandProperty Name
   }
@@ -210,14 +225,24 @@ function SuspenderUsuario {
   # ---------- Google: backup de grupos ----------
   $tempGoogleGroupsCsv = Join-Path $backupDir "$adusername`_google_groups.csv"
 
-  $googleGroupsOut = Invoke-GamCapture -Arguments @("user", $email, "print", "groups")
-  Write-Utf8NoBomFile -Path $tempGoogleGroupsCsv -Lines $googleGroupsOut
+  $googleGroupsOut = Invoke-GamCapture -Arguments @(
+    "user",
+    $email,
+    "print",
+    "groups"
+  )
+
+  Write-Utf8NoBomFile `
+    -Path $tempGoogleGroupsCsv `
+    -Lines $googleGroupsOut
 
   # ---------- Salva backup final (AD + Google) ----------
   $saidaPath = Join-Path $backupDir "$adusername`_grupos_completos.txt"
 
   $saida = @()
+
   $saida += "Grupos AD:"
+
   if ($gruposADList.Count -gt 0) {
     $saida += $gruposADList
   }
@@ -227,6 +252,7 @@ function SuspenderUsuario {
 
   $saida += ""
   $saida += "Grupos Google Workspace (via GAM):"
+
   if ($googleGroupsOut.Count -gt 0) {
     $saida += $googleGroupsOut
   }
@@ -234,21 +260,25 @@ function SuspenderUsuario {
     $saida += "(nenhum output retornado)"
   }
 
-  $saida | Out-File -FilePath $saidaPath -Encoding utf8BOM
+  $saida | Out-File `
+    -FilePath $saidaPath `
+    -Encoding utf8BOM
 
-  # Remove de grupos AD (depois do backup)
+  # ---------- Remove de grupos AD ----------
+  # Somente depois do backup
+
   if ($gruposAD.Count -gt 0) {
 
     foreach ($grupo in $gruposAD) {
 
       try {
-        Remove-ADGroupMember -Identity $grupo.DistinguishedName `
+        Remove-ADGroupMember `
+          -Identity $grupo.DistinguishedName `
           -Members $adusername `
           -Confirm:$false `
           -ErrorAction Stop
 
         Write-Host "AD: removido de '$($grupo.Name)'" -ForegroundColor DarkYellow
-
       }
       catch {
         Write-Warning "Falha ao remover '$adusername' do grupo '$($grupo.Name)': $($_.Exception.Message)"
@@ -257,22 +287,44 @@ function SuspenderUsuario {
     }
 
     Write-Host "AD: remoção de grupos concluída. Backup salvo em: $saidaPath" -ForegroundColor Yellow
-
   }
   else {
-
     Write-Host "AD: nenhum grupo para remover (backup salvo em: $saidaPath)" -ForegroundColor Yellow
-
   }
 
-  # Remove CSV temporário do Google (opcional; se você quiser manter, comente a linha abaixo)
+  # Remove CSV temporário do Google
   Remove-Item $tempGoogleGroupsCsv -ErrorAction SilentlyContinue
 
   # ---------- Google: altera senha, remove grupos, suspende ----------
   try {
-    $null = Invoke-GamCapture -Arguments @("update", "user", $email, "password", $password, "nohash", "changepassword", "on")
-    $null = Invoke-GamCapture -Arguments @("user", $email, "delete", "groups")
-    $null = Invoke-GamCapture -Arguments @("update", "user", $email, "suspended", "on", "org", $googleOrgPath)
+
+    $null = Invoke-GamCapture -Arguments @(
+      "update",
+      "user",
+      $email,
+      "password",
+      $password,
+      "nohash",
+      "changepassword",
+      "on"
+    )
+
+    $null = Invoke-GamCapture -Arguments @(
+      "user",
+      $email,
+      "delete",
+      "groups"
+    )
+
+    $null = Invoke-GamCapture -Arguments @(
+      "update",
+      "user",
+      $email,
+      "suspended",
+      "on",
+      "org",
+      $googleOrgPath
+    )
 
     Write-Host "Google: usuário suspenso, senha alterada e removido de grupos." -ForegroundColor Yellow
     Write-Host "Senha temporária (AD + Google): $password" -ForegroundColor DarkYellow
@@ -292,12 +344,24 @@ $modo = Read-Host "Modo único (U) ou CSV (C)?"
 if ($modo.ToUpper() -eq "U") {
 
   $adusername = Read-Host "Digite o SamAccountName"
-  SuspenderUsuario -adusername $adusername -email ""
+
+  SuspenderUsuario `
+    -adusername $adusername `
+    -email ""
 
 }
 elseif ($modo.ToUpper() -eq "C") {
 
-  $caminho = Read-Host "Caminho do CSV (ex: C:\Users\dnunes\Downloads\suspensos.csv)"
+  $caminho = Read-Host "Caminho do CSV ($csvPadrao)"
+
+  # Se deixar o caminho em branco, usa o caminho padrão
+  if ([string]::IsNullOrWhiteSpace($caminho)) {
+    $caminho = $csvPadrao
+  }
+
+  Write-Host ""
+  Write-Host "Usando CSV: $caminho" -ForegroundColor DarkCyan
+  Write-Host ""
 
   if (-not (Test-Path $caminho)) {
     Write-Warning "CSV não encontrado: $caminho"
@@ -318,20 +382,31 @@ elseif ($modo.ToUpper() -eq "C") {
 
     # Se não veio email no CSV, tenta buscar no AD
     if (-not $email) {
+
       try {
-        $found = Get-ADUser -Identity $adusername -Properties EmailAddress
+        $found = Get-ADUser `
+          -Identity $adusername `
+          -Properties EmailAddress
+
         $email = $found.EmailAddress
       }
       catch {
         $email = $null
       }
+
     }
 
     if ($email) {
-      SuspenderUsuario -adusername $adusername -email $email
+
+      SuspenderUsuario `
+        -adusername $adusername `
+        -email $email
+
     }
     else {
+
       Write-Warning "Não foi possível determinar o e-mail do usuário '$adusername' (CSV e AD sem email)."
+
     }
   }
 
