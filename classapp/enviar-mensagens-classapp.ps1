@@ -5,6 +5,11 @@
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'classapp-comum.ps1')
+$diretorioLogs = Join-Path $PSScriptRoot 'logs'
+$null = New-Item -ItemType Directory -Path $diretorioLogs -Force
+$arquivoExecucao = Join-Path $diretorioLogs ('envio-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0,6) + '.log')
+$null = Start-Transcript -Path $arquivoExecucao -ErrorAction Stop
+try {
 $ambiente = 'teste'
 $variavelToken = 'CLASSAPP_TOKEN_TESTE'
 if ($Producao) { $ambiente = 'producao'; $variavelToken = 'CLASSAPP_TOKEN_PRODUCAO' }
@@ -14,14 +19,12 @@ if ($Producao) { $comandoGet = '.\get-api-classapp.ps1' }
 if (-not (Test-Path -LiteralPath $banco)) { throw "Base não encontrada. Execute $comandoGet e rode o envio novamente." }
 try {
     $textoBase = [IO.File]::ReadAllText($banco, [Text.Encoding]::UTF8).TrimStart([char]0xFEFF)
-    if (-not $textoBase.TrimStart().StartsWith('[')) { throw 'Formato inválido.' }
-    $alunos = @(ConvertFrom-Json -InputObject $textoBase)
-    if ($alunos.Count -eq 0 -or $null -eq $alunos[0]) { throw 'Base vazia.' }
-    foreach ($a in $alunos) {
-        if ([string]::IsNullOrWhiteSpace($a.fullname) -or $a.disabled -isnot [bool]) { throw 'Cadastro inválido.' }
-    }
+    $alunos = @(ConvertFrom-ClassAppAlunosJson -Texto $textoBase)
 }
-catch { throw "Base de alunos inválida. Execute $comandoGet e rode o envio novamente." }
+catch {
+    $motivo = $_.Exception.Message
+    throw "Base de alunos inválida: $motivo Execute $comandoGet e rode o envio novamente."
+}
 
 if ([string]::IsNullOrWhiteSpace($Csv)) { $Csv = Read-Host 'Caminho completo do CSV de mensagens' }
 $Csv = $Csv.Trim().Trim('"').Trim("'")
@@ -147,3 +150,13 @@ try {
     Write-Host "`nLote solicitado. Confirme a entrega no ClassApp. Histórico: $historico"
 }
 finally { $headers.Clear(); $lock.Dispose() }
+
+}
+catch {
+    Write-Host ("ERRO: " + $_.Exception.Message) -ForegroundColor Red
+    throw
+}
+finally {
+    $null = Stop-Transcript
+    Write-Host "Log da execução: $arquivoExecucao"
+}

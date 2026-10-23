@@ -5,6 +5,11 @@
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'classapp-comum.ps1')
+$diretorioLogs = Join-Path $PSScriptRoot 'logs'
+$null = New-Item -ItemType Directory -Path $diretorioLogs -Force
+$arquivoExecucao = Join-Path $diretorioLogs ('get-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0,6) + '.log')
+$null = Start-Transcript -Path $arquivoExecucao -ErrorAction Stop
+try {
 $ambiente = 'producao'
 $variavelToken = 'CLASSAPP_TOKEN_PRODUCAO'
 if ($Teste) { $ambiente = 'teste'; $variavelToken = 'CLASSAPP_TOKEN_TESTE' }
@@ -29,13 +34,7 @@ for ($tentativa=1; $tentativa -le $Tentativas; $tentativa++) {
         $conteudo = $resposta.Content
         if ($conteudo -is [byte[]]) { $conteudo = [Text.Encoding]::UTF8.GetString($conteudo) }
         $conteudo = ([string]$conteudo).TrimStart([char]0xFEFF)
-        if ([string]::IsNullOrWhiteSpace($conteudo)) { throw 'Arquivo sem conteúdo.' }
-        if (-not $conteudo.TrimStart().StartsWith('[')) { throw 'Exportação não contém uma lista JSON.' }
-        $alunos = @(ConvertFrom-Json -InputObject $conteudo)
-        if ($alunos.Count -eq 0 -or $null -eq $alunos[0]) { throw 'Exportação vazia. Base anterior preservada.' }
-        foreach ($a in $alunos) {
-            if ([string]::IsNullOrWhiteSpace($a.fullname) -or $a.disabled -isnot [bool] -or $a.PSObject.Properties.Name -notcontains 'eid') { throw 'Cadastro com estrutura inválida.' }
-        }
+        $alunos = @(ConvertFrom-ClassAppAlunosJson -Texto $conteudo)
         $conteudoValido = $conteudo
         break
     }
@@ -56,3 +55,13 @@ try {
 }
 finally { if (Test-Path -LiteralPath $temporario) { Remove-Item -LiteralPath $temporario -Force } }
 Write-Host "Base atualizada: $destino | Cadastros: $($alunos.Count)"
+
+}
+catch {
+    Write-Host ("ERRO: " + $_.Exception.Message) -ForegroundColor Red
+    throw
+}
+finally {
+    $null = Stop-Transcript
+    Write-Host "Log da execução: $arquivoExecucao"
+}

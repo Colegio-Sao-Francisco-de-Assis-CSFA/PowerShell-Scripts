@@ -36,6 +36,35 @@ function ConvertTo-NomeNormalizado {
     return ([regex]::Replace($semAcentos.Trim(), '\s+', ' ')).ToUpperInvariant()
 }
 
+function ConvertFrom-ClassAppAlunosJson {
+    param([string]$Texto)
+    $textoLimpo = $Texto.TrimStart([char]0xFEFF).Trim()
+    if (-not $textoLimpo) { throw 'Arquivo sem conteúdo.' }
+    if (-not $textoLimpo.StartsWith('[')) { throw 'A raiz do JSON deve ser uma lista de alunos.' }
+    $convertido = ConvertFrom-Json -InputObject $textoLimpo -ErrorAction Stop
+    $quantidade = 0
+    # Iteração explícita evita a diferença de enumeração do ConvertFrom-Json no PS 5.1 e 7.
+    foreach ($cadastro in $convertido) {
+        $quantidade++
+        if ($null -eq $cadastro) { throw "Cadastro ${quantidade}: registro nulo." }
+        $nome = $cadastro.PSObject.Properties['fullname']
+        $eid = $cadastro.PSObject.Properties['eid']
+        $status = $cadastro.PSObject.Properties['disabled']
+        if ($null -eq $nome -or $nome.Value -isnot [string] -or [string]::IsNullOrWhiteSpace($nome.Value)) {
+            throw "Cadastro ${quantidade}: fullname ausente ou inválido."
+        }
+        if ($null -eq $eid) { throw "Cadastro ${quantidade} ($($nome.Value)): campo eid ausente." }
+        if ($null -eq $status -or $status.Value -isnot [bool]) {
+            $tipo = 'nulo/ausente'
+            if ($null -ne $status -and $null -ne $status.Value) { $tipo = $status.Value.GetType().FullName }
+            throw "Cadastro ${quantidade} ($($nome.Value)): disabled precisa ser booleano; recebido: $tipo."
+        }
+        # EID vazio é permitido na exportação; o lote bloqueia apenas destinatários sem EID.
+        Write-Output $cadastro
+    }
+    if ($quantidade -eq 0) { throw 'Lista de alunos vazia.' }
+}
+
 function Expand-Modelo {
     param([string]$Modelo, [object]$Linha)
     return [regex]::Replace($Modelo, '\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}', [Text.RegularExpressions.MatchEvaluator]{
