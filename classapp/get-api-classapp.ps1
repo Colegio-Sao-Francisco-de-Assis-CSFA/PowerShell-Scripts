@@ -1,84 +1,58 @@
 ﻿param(
-  [switch]$Todos,
-  [ValidateRange(1, 30)][int]$Tentativas = 12,
-  [ValidateRange(1, 60)][int]$IntervaloSegundos = 10,
-  [string]$Saida = (Join-Path $PSScriptRoot ('alunos-producao-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0, 6) + '.json'))
+    [switch]$Teste,
+    [ValidateRange(1,30)][int]$Tentativas = 12,
+    [ValidateRange(1,60)][int]$IntervaloSegundos = 10
 )
 $ErrorActionPreference = 'Stop'
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-function Read-DotEnvToken {
-  param([string]$Nome)
-  $arquivo = Join-Path $PSScriptRoot '.env'
-  if (-not (Test-Path -LiteralPath $arquivo)) { throw "Arquivo .env não encontrado: $arquivo" }
-  $dados = @{}
-  foreach ($linha in Get-Content -LiteralPath $arquivo -Encoding UTF8) {
-    $texto = $linha.Trim()
-    if (-not $texto -or $texto.StartsWith('#')) { continue }
-    $partes = $texto -split '=', 2
-    if ($partes.Count -ne 2) { throw 'Linha inválida no .env. Use NOME=valor.' }
-    $chave = $partes[0].Trim()
-    if ($chave -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') { throw 'Nome de variável inválido no .env.' }
-    if ($dados.ContainsKey($chave)) { throw "Variável duplicada no .env: $chave" }
-    $valor = $partes[1].Trim()
-    if ($valor.Length -ge 2) {
-      if (($valor.StartsWith('"') -and $valor.EndsWith('"')) -or
-        ($valor.StartsWith("'") -and $valor.EndsWith("'"))) {
-        $valor = $valor.Substring(1, $valor.Length - 2)
-      }
-    }
-    $dados[$chave] = $valor
-  }
-  if (-not $dados.ContainsKey($Nome) -or [string]::IsNullOrWhiteSpace($dados[$Nome])) {
-    throw "Configure $Nome no .env. Não será usado outro token como alternativa."
-  }
-  return $dados[$Nome]
-}
-
-$cabecalhos = @{ Authorization = 'Bearer ' + (Read-DotEnvToken -Nome 'CLASSAPP_TOKEN_PRODUCAO') }
-$uri = 'https://api.classapp.com.br/v1/student'
-if (-not $Todos) { $uri += '?disabled=false' }
-Write-Host 'Ambiente: PRODUÇÃO | consulta de alunos (sem envio de mensagens).'
+. (Join-Path $PSScriptRoot 'classapp-comum.ps1')
+$ambiente = 'producao'
+$variavelToken = 'CLASSAPP_TOKEN_PRODUCAO'
+if ($Teste) { $ambiente = 'teste'; $variavelToken = 'CLASSAPP_TOKEN_TESTE' }
+$pasta = Join-Path $PSScriptRoot 'dados'
+$null = New-Item -ItemType Directory -Path $pasta -Force
+$destino = Join-Path $pasta "alunos-$ambiente.json"
+$headers = @{ Authorization = 'Bearer ' + (Read-DotEnvToken -Nome $variavelToken) }
+Write-Host "Ambiente: $ambiente | consulta de alunos; não envia mensagens."
 try {
-  # Gera uma única exportação; tentativas seguintes consultam o MESMO arquivo.
-  $resultado = Invoke-RestMethod -Method Get -Uri $uri -Headers $cabecalhos -TimeoutSec 60
+    # Sem filtro: preserva os inativos para que a validação os identifique.
+    $resultado = Invoke-RestMethod -Method Get -Uri 'https://api.classapp.com.br/v1/student' -Headers $headers -TimeoutSec 60
 }
-finally { $cabecalhos.Clear() }
-if (-not $resultado.bucketFile) { throw 'A API não retornou bucketFile.' }
-$urlArquivo = [uri]$resultado.bucketFile
-if ($urlArquivo.Scheme -ne 'https') { throw 'O link da exportação não usa HTTPS.' }
-
-for ($tentativa = 1; $tentativa -le $Tentativas; $tentativa++) {
-  Write-Host "Consultando o arquivo: tentativa $tentativa de $Tentativas..."
-  try {
-    # Não encaminha o token da API para o endereço do arquivo.
-    $resposta = Invoke-WebRequest -Uri $urlArquivo.AbsoluteUri -UseBasicParsing `
-      -Headers @{ 'Cache-Control' = 'no-cache' } -TimeoutSec 60
-    $conteudo = $resposta.Content
-    if ($conteudo -is [byte[]]) { $conteudo = [Text.Encoding]::UTF8.GetString($conteudo) }
-    $conteudo = [string]$conteudo
-    $conteudo = $conteudo.TrimStart([char]0xFEFF)
-    if ([string]::IsNullOrWhiteSpace($conteudo)) { throw 'Arquivo ainda sem conteúdo.' }
-    $null = ConvertFrom-Json -InputObject $conteudo -ErrorAction Stop
-    if (-not $conteudo.TrimStart().StartsWith('[')) { throw 'JSON com formato diferente da lista de alunos esperada.' }
-    $alunos = @(ConvertFrom-Json -InputObject $conteudo)
-    if ($alunos.Count -eq 1 -and $null -eq $alunos[0]) { $alunos = @() }
-    $destino = [IO.Path]::GetFullPath($Saida)
-    $pasta = Split-Path -Parent $destino
-    if (-not (Test-Path -LiteralPath $pasta)) { $null = New-Item -ItemType Directory -Path $pasta -Force }
-    if (Test-Path -LiteralPath $destino) { throw "O arquivo já existe: $destino. Escolha outro caminho com -Saida." }
-    [IO.File]::WriteAllText($destino, $conteudo, [Text.UTF8Encoding]::new($false))
-    Write-Host "`nArquivo salvo: $destino"
-    Write-Host "Alunos retornados: $($alunos.Count)"
-    $alunos | Select-Object fullname, eid, disabled | Format-Table -AutoSize
-    return
-  }
-  catch {
-    if (Test-Path -LiteralPath $Saida) { throw }
-    Write-Host "Arquivo ainda indisponível ou inválido: $($_.Exception.Message)"
-    if ($tentativa -eq $Tentativas) {
-      throw 'Exportação não disponível após as tentativas. Confira o e-mail do ClassApp ou procure o suporte; não houve nova solicitação de exportação.'
+finally { $headers.Clear() }
+if (-not $resultado.bucketFile) { throw 'A API não retornou bucketFile. Base anterior preservada.' }
+$url = [uri]$resultado.bucketFile
+if ($url.Scheme -ne 'https') { throw 'Link de exportação não usa HTTPS.' }
+$conteudoValido = $null
+for ($tentativa=1; $tentativa -le $Tentativas; $tentativa++) {
+    Write-Host "Baixando a mesma exportação: tentativa $tentativa de $Tentativas..."
+    try {
+        $resposta = Invoke-WebRequest -Uri $url.AbsoluteUri -UseBasicParsing -TimeoutSec 60 -Headers @{ 'Cache-Control'='no-cache' }
+        $conteudo = $resposta.Content
+        if ($conteudo -is [byte[]]) { $conteudo = [Text.Encoding]::UTF8.GetString($conteudo) }
+        $conteudo = ([string]$conteudo).TrimStart([char]0xFEFF)
+        if ([string]::IsNullOrWhiteSpace($conteudo)) { throw 'Arquivo sem conteúdo.' }
+        if (-not $conteudo.TrimStart().StartsWith('[')) { throw 'Exportação não contém uma lista JSON.' }
+        $alunos = @(ConvertFrom-Json -InputObject $conteudo)
+        if ($alunos.Count -eq 0 -or $null -eq $alunos[0]) { throw 'Exportação vazia. Base anterior preservada.' }
+        foreach ($a in $alunos) {
+            if ([string]::IsNullOrWhiteSpace($a.fullname) -or $a.disabled -isnot [bool] -or $a.PSObject.Properties.Name -notcontains 'eid') { throw 'Cadastro com estrutura inválida.' }
+        }
+        $conteudoValido = $conteudo
+        break
     }
-    Start-Sleep -Seconds $IntervaloSegundos
-  }
+    catch {
+        Write-Host "Exportação indisponível/inválida: $($_.Exception.Message)"
+        if ($tentativa -eq $Tentativas) { throw 'Não foi possível atualizar a base. Base anterior preservada. Confira o ClassApp/suporte antes de tentar novamente.' }
+        Start-Sleep -Seconds $IntervaloSegundos
+    }
 }
+$temporario = $destino + '.' + [guid]::NewGuid().ToString('N') + '.tmp'
+try {
+    [IO.File]::WriteAllText($temporario,$conteudoValido,[Text.UTF8Encoding]::new($false))
+    if (Test-Path -LiteralPath $destino) {
+        $backup = Join-Path $pasta ("alunos-$ambiente-anterior-" + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0,6) + '.json')
+        [IO.File]::Replace($temporario,$destino,$backup)
+    }
+    else { [IO.File]::Move($temporario,$destino) }
+}
+finally { if (Test-Path -LiteralPath $temporario) { Remove-Item -LiteralPath $temporario -Force } }
+Write-Host "Base atualizada: $destino | Cadastros: $($alunos.Count)"

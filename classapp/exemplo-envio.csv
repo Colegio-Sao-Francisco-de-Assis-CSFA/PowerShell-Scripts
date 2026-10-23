@@ -1,0 +1,2 @@
+enviar;nome;assunto;mensagem;tipo;responder;primeiro_nome;link
+NAO;NOME COMPLETO DO ALUNO;Informações para {{primeiro_nome}};Olá, família de {{primeiro_nome}}! Segue o link: {{link}};comunicado;SIM;Nome;https://example.com

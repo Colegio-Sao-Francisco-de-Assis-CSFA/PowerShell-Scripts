@@ -2,3 +2,13 @@
 **/.env
 logs/
 usuarios-suspensos/
+
+# Bases e exportações locais de alunos (inclusive JSONs antigos na raiz)
+classapp/*.json
+classapp/*.json.tmp
+classapp/dados/
+classapp/resultados/
+!exemplo-envio.csv
+
+# Arquivos temporários
+*.tmp
